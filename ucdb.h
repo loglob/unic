@@ -33016,7 +33016,7 @@ const struct { uchar_t c : UCHAR_BIT; uchar_t tc : UCHAR_BIT; } __attribute__((p
 };
  
  /* Gets the ucdb entry for the given character */
-inline const ucdb_entry_t *ucdb_get(uchar_t u)
+const ucdb_entry_t *ucdb_get(uchar_t u)
 {
 	if(u < UCHAR_IN_LINE)
 		return ucdb + u;
