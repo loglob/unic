@@ -107,7 +107,7 @@ typedef struct
 
 /* The unicode character database */
 const ucdb_entry_t ucdb[] =
-{ 
+{
 	{ 0x0000, UCLASS_CC, 0x0000, 0x0000, },
 	{ 0x0001, UCLASS_CC, 0x0000, 0x0000, },
 	{ 0x0002, UCLASS_CC, 0x0000, 0x0000, },
@@ -33014,7 +33014,7 @@ const struct { uchar_t c : UCHAR_BIT; uchar_t tc : UCHAR_BIT; } __attribute__((p
 	{ 0x10FE, 0x10FE },
 	{ 0x10FF, 0x10FF }
 };
- 
+
  /* Gets the ucdb entry for the given character */
 const ucdb_entry_t *ucdb_get(uchar_t u)
 {
@@ -33024,7 +33024,7 @@ const ucdb_entry_t *ucdb_get(uchar_t u)
 		return NULL;
 
 	size_t l = UCHAR_IN_LINE, r = UCHAR_COUNT - 1;
-	
+
 	while(l <= r)
 	{
 		size_t m = (l + r) / 2;

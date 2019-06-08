@@ -41,7 +41,7 @@ uchar_t uchar_title(uchar_t c)
 		return uchar_upper(c);
 
 	size_t l = 0, r = sizeof(ucdb_tcmap) / sizeof(ucdb_tcmap[0]);
-	
+
 	while(l <= r)
 	{
 		size_t m = (l + r) / 2;

@@ -51,8 +51,7 @@ static inline uchar_t _w1252_fallback(unsigned char c)
 		MAP(0x8C, 0x0152)
 
 		MAP(0x8E, 0x017D)
-		
-		
+
 		MAP(0x91, 0x2018)
 		MAP(0x92, 0x2019)
 		MAP(0x93, 0x201C)
@@ -65,7 +64,7 @@ static inline uchar_t _w1252_fallback(unsigned char c)
 		MAP(0x9A, 0x0161)
 		MAP(0x9B, 0x203A)
 		MAP(0x9C, 0x0153)
-		
+
 		MAP(0x9E, 0x017E)
 		MAP(0x9F, 0x0178)
 
@@ -83,7 +82,7 @@ static inline unsigned int _cl1(int i)
 
 	for(c = 0; i & 0x80; i = i << 1)
 		c++;
-	
+
 	return c;
 }
 
@@ -91,17 +90,17 @@ uchar_t u8dec(const char *str, size_t *l)
 {
 	*l = 1;
 	int cl = _cl1(str[0]);
-	
+
 	if(cl < 2 || cl > 4)
 		return _w1252_fallback(*str);
-	
+
 	uchar_t v = str[0] & (0xFF >> cl);
 
 	for(int i = 1; i < cl; i++)
 	{
 		if((str[i] & 0xC0) != 0x80)
 			return _w1252_fallback(*str);
-	
+
 		v = v << 6;
 		v |= str[i] & (0x3F);
 	}
@@ -130,14 +129,14 @@ uchar_t fgetu8(FILE *f)
 {
 	char b[4];
 	int c0 = fgetc(f);
-	
+
 	if(c0 == EOF)
 		return EOF;
-	
+
 	b[0] = c0;
 	unsigned int l = _cl1(c0);
 	uchar_t uc = c0 & (0xFF >> l);
-	
+
 	if(l < 2 || l > 4)
 		return _w1252_fallback(b[0]);
 
@@ -162,10 +161,10 @@ uchar_t fgetu8(FILE *f)
 		on_eof:
 		for(size_t j = 1; j < i; j++)
 			ungetc(b[j], f);
-		
+
 		return _w1252_fallback(b[0]);
 	}
-	
+
 	return uc;
 }
 
