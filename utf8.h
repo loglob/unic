@@ -16,6 +16,8 @@ size_t u8len(uchar_t);
 uchar_t u8dec(const char *str, size_t *l);
 /* Writes the unicode character to the buffer. */
 void u8enc(uchar_t uc, char *buf);
+/* Determines the amount of unicode characters in the given utf-8 string */
+size_t u8_strlen(const char *str);
 
 inline size_t u8len(uchar_t c)
 {
@@ -35,7 +37,7 @@ static inline uchar_t _w1252_fallback(unsigned char c)
 	switch(c)
 	{
 		MAP(0x80, 0x20AC)
-		
+
 		MAP(0x82, 0x201A)
 		MAP(0x83, 0x0192)
 		MAP(0x84, 0x201E)
@@ -175,6 +177,21 @@ void fputu8(uchar_t c, FILE *f)
 
 	for(size_t i = 0; i < l; i++)
 		fputc(buf[i], f);
+}
+
+size_t u8_strlen(const char *str)
+{
+	size_t fullLen = 0;
+	size_t chrLen = 0;
+	uchar_t c;
+
+	while(c = u8dec(str, &chrLen))
+	{
+		str += chrLen;
+		fullLen++;
+	}
+
+	return fullLen;
 }
 
 #endif
