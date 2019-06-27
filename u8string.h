@@ -62,7 +62,7 @@ bool u8_isvalid(const char *str);
 size_t u8_strlen(const char *str)
 {
 	uchar_t c;
-	size_t len;
+	size_t len = 0;
 
 	while(str += u8dec(str, &c), c)
 		len++;
@@ -77,9 +77,8 @@ size_t u8_strnlen(const char *str, size_t n)
 	size_t len = 0;
 	size_t clen = 0;
 
-	while(curlen = u8dec(str, &c), c && (len < n))
+	while(curlen = u8dec(str, &c), c && (len++ < n))
 	{
-		len++;
 		clen += curlen;
 		str += curlen;
 	}
@@ -246,10 +245,11 @@ const char *u8_strstrI(const char *haystack, const char *needle)
 	size_t curlen;
 	uchar_t n0;
 	u8dec(needle, &n0);
+	n0 = uchar_lower(n0);
 
 	while(curlen = u8dec(haystack, &c), c)
 	{
-		if(c == n0 && u8_strstart(haystack, needle))
+		if(uchar_lower(c) == n0 && u8_strstartI(haystack, needle))
 			return haystack;
 		
 		haystack += curlen;
@@ -261,9 +261,9 @@ bool u8_streq(const char *a, const char *b)
 {
 	uchar_t ac, bc;
 
-	while(a += u8dec(a, &ac), b += u8dec(b, &bc), a == b)
+	while(a += u8dec(a, &ac), b += u8dec(b, &bc), ac == bc)
 	{
-		if(!a)
+		if(!ac)
 			return true;
 	}
 
@@ -274,9 +274,9 @@ bool u8_streqI(const char *a, const char *b)
 {
 	uchar_t ac, bc;
 
-	while(a += u8dec(a, &ac), b += u8dec(b, &bc), uchar_lower(a) == uchar_lower(b))
+	while(a += u8dec(a, &ac), b += u8dec(b, &bc), uchar_lower(ac) == uchar_lower(bc))
 	{
-		if(!a)
+		if(!ac)
 			return true;
 	}
 
@@ -339,6 +339,8 @@ bool u8_isnorm(const char *str)
 	while(str += (curlen = u8dec(str, &c)), c)
 	{
 		if(curlen != u8enc(c, NULL))
+			return false;
+		if(uchar_class(c) == UCLASS_UNASSIGNED)
 			return false;
 	}
 
