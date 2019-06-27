@@ -9,17 +9,17 @@
 uchar_t fgetu8(FILE *);
 /* Writes the given unicode character to the given utf-8 encoded stream. */
 void fputu8(uchar_t, FILE *);
-/* Gets the amount of bytes needed to encode the given unicode character in utf-8 */
-size_t u8len(uchar_t);
 /* Reads the next utf-8 encoded character from the given string.
-	The amount of bytes read is stored in *l */
-uchar_t u8dec(const char *str, size_t *l);
-/* Writes the unicode character to the buffer. */
-void u8enc(uchar_t uc, char *buf);
-/* Determines the amount of unicode characters in the given utf-8 string */
-size_t u8_strlen(const char *str);
+	Returnes the amount of bytes read.
+	The character is Stored in *c.
+	c may be NULL to only determine the length of the next character. */
+size_t u8dec(const char *str, uchar_t *c);
+/* Writes the given unicode character to the buffer.
+	Returnes the amount of bytes written.
+	buf may be NULL to only determine the length of the given character. */
+size_t u8enc(uchar_t uc, char *buf);
 
-inline size_t u8len(uchar_t c)
+inline static size_t u8len(uchar_t c)
 {
 	return (c > 0xFFFF)
 		? 4
@@ -86,43 +86,52 @@ static inline unsigned int _cl1(int i)
 	return c;
 }
 
-uchar_t u8dec(const char *str, size_t *l)
+size_t u8dec(const char *str, uchar_t *c)
 {
-	*l = 1;
 	int cl = _cl1(str[0]);
+	
+	if(c)
+		*c = _w1252_fallback(*str);
 
 	if(cl < 2 || cl > 4)
-		return _w1252_fallback(*str);
+		return 1;
 
 	uchar_t v = str[0] & (0xFF >> cl);
 
 	for(int i = 1; i < cl; i++)
 	{
 		if((str[i] & 0xC0) != 0x80)
-			return _w1252_fallback(*str);
+			return 1;
 
 		v = v << 6;
 		v |= str[i] & (0x3F);
 	}
 
-	*l = cl;
-	return v;
+	if(c)
+		*c = v;
+	
+	return cl;
 }
 
-void u8enc(uchar_t uc, char *buf)
+size_t u8enc(uchar_t uc, char *buf)
 {
 	size_t l = u8len(uc);
-	// avoid the mess of bitwise manipulation
-	if(l == 1)
+
+	if(buf)
 	{
-		buf[0] = uc;
-		return;
+		// avoid the mess of bitwise manipulation
+		if(l == 1)
+			buf[0] = uc;
+		else
+		{
+			buf[0] = ((uc >> (6*(l - 1))) & (0xFF >> l)) | (0xFF00 >> l);
+
+			for(size_t i = 1; i < l; i++)
+				buf[i] = 0x80 | (0x3F & (uc >> (6 * (l - i - 1))));
+		}
 	}
 
-	buf[0] = ((uc >> (6*(l - 1))) & (0xFF >> l)) | (0xFF00 >> l);
-
-	for(size_t i = 1; i < l; i++)
-		buf[i] = 0x80 | (0x3F & (uc >> (6 * (l - i - 1))));
+	return l;
 }
 
 uchar_t fgetu8(FILE *f)
@@ -171,26 +180,10 @@ uchar_t fgetu8(FILE *f)
 void fputu8(uchar_t c, FILE *f)
 {
 	char buf[4];
-	u8enc(c, buf);
-	size_t l = u8len(c);
+	size_t l = u8enc(c, buf);
 
 	for(size_t i = 0; i < l; i++)
 		fputc(buf[i], f);
-}
-
-size_t u8_strlen(const char *str)
-{
-	size_t fullLen = 0;
-	size_t chrLen = 0;
-	uchar_t c;
-
-	while(c = u8dec(str, &chrLen))
-	{
-		str += chrLen;
-		fullLen++;
-	}
-
-	return fullLen;
 }
 
 #endif
