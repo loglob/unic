@@ -12,7 +12,7 @@ size_t u8_strnlen(const char *str, size_t n);
 /* Determines the amount of complete unicode characters in the first c bytes of the given string. */
 size_t u8_strclen(const char *str, size_t c);
 
-/* Copies the utf-8 encided string str to dst.
+/* Copies the utf-8 encoded string str to dst.
 	Every character written to dst is guaranteed to be utf-8 normalized.
 	Returns the amount of bytes written to dst, including the null terminator.
 	If dst is NULL, no write operations are performed but the correct byte amount is returned. */
@@ -22,7 +22,7 @@ size_t u8_strcpy(const char *str, char *dst);
 	Returns the amount of bytes written to dst, including the null terminator.
 	If dst is NULL, no write operations are performed but the correct byte amount is returned. */
 size_t u8_strncpy(const char *str, char *dst, size_t n);
-/* Copies at most c unicode characters from str to dst.
+/* Copies at most c bytes from str to dst.
 	Every character written to dst is guaranteed to be utf-8 normalized.
 	Returns the amount of bytes written to dst, including the null terminator.
 	If dst is NULL, no write operations are performed but the correct byte amount is returned. */
@@ -58,6 +58,26 @@ bool u8_strstartI(const char *str, const char *start);
 bool u8_isnorm(const char *str);
 /* Determines if the given utf-8 encoded string is valid utf-8. */
 bool u8_isvalid(const char *str);
+
+/* Applies map_f to every character in the utf-8 encoded string and writes them to buf.
+	If map_f returns 0, no character is written to buf. 
+	Every character written to dst is guaranteed to be utf-8 normalized.
+	Returns the amount of bytes written to dst, including the null terminator.
+	If dst is NULL, no write operations are performed but the correct byte amount is returned. */
+size_t u8_strmap(const char *str, char *dst, uchar_t (*map_f)(uchar_t));
+/* Applies map_f to, at most, the first n character in the utf-8 encoded string and writes them to buf.
+	If map_f returns 0, no character is written to buf.
+	Every character written to dst is guaranteed to be utf-8 normalized.
+	Returns the amount of bytes written to dst, including the null terminator.
+	If dst is NULL, no write operations are performed but the correct byte amount is returned. */
+size_t u8_strnmap(const char *str, char *dst, size_t n, uchar_t (*map_f)(uchar_t));
+/* Applies map_f to every character in the utf-8 encoded string and writes them to buf.
+	If map_f returns 0, no character is written to buf.
+	Writes at most c characters.
+	Every character written to dst is guaranteed to be utf-8 normalized.
+	Returns the amount of bytes written to dst, including the null terminator.
+	If dst is NULL, no write operations are performed but the correct byte amount is returned. */
+size_t u8_strnmap(const char *str, char *dst, size_t c, uchar_t (*map_f)(uchar_t));
 
 size_t u8_strlen(const char *str)
 {
@@ -371,6 +391,79 @@ bool u8_isvalid(const char *str)
 	}
 
 	return true;
+}
+
+
+size_t u8_strmap(const char *str, char *dst, uchar_t (*map_f)(uchar_t))
+{
+	uchar_t c;
+	size_t w = 1;
+
+	while(str += u8dec(str, &c), c)
+	{
+		c = map_f(c);
+	
+		size_t curlen = u8enc(c, dst);
+
+		if(dst)
+			dst += curlen;
+
+		w += curlen;
+	}
+
+	if(dst)
+		*dst = 0;
+
+	return w;
+}
+
+size_t u8_strnmap(const char *str, char *dst, size_t n, uchar_t (*map_f)(uchar_t))
+{
+	uchar_t c;
+	size_t w = 1;
+	size_t len = 0;
+
+	while(str += u8dec(str, &c), c && len++ < n)
+	{
+		c = map_f(c);
+
+		size_t curlen = u8enc(c, dst);
+
+		if(dst)
+			dst += curlen;
+
+		w += curlen;
+	}
+
+	if(dst)
+		*dst = 0;
+
+	return w;
+}
+
+size_t u8_strnmap(const char *str, char *dst, size_t c, uchar_t (*map_f)(uchar_t))
+{
+	uchar_t chr;
+	size_t w = 1;
+
+	while(str += u8dec(str, &chr), chr)
+	{
+		c = map_f(c);
+
+		size_t curlen = u8enc(chr, NULL);
+
+		if(w + curlen > c)
+			break;
+		if(dst)
+			dst += u8enc(chr, dst);
+		
+		w += curlen;
+	}
+
+	if(dst)
+		*dst = 0;
+	
+	return w;
 }
 
 #endif
