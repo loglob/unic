@@ -86,14 +86,14 @@ size_t u8_strnlen(const char *str, size_t n)
 	return clen;
 }
 
-size_t u8_strclen(const char *str, size_t c)
+size_t u8_strclen(const char *str, size_t lim)
 {
 	uchar_t c;
 	size_t curlen;
 	size_t r = 0;
 	size_t len = 0;
 
-	while(curlen = u8dec(str, &c), c && ((r += curlen) < c))
+	while(curlen = u8dec(str, &c), c && ((r += curlen) < lim))
 		len++;
 	
 	return len;
@@ -102,7 +102,7 @@ size_t u8_strclen(const char *str, size_t c)
 size_t u8_strcpy(const char *str, char *dst)
 {
 	uchar_t c;
-	size_t w = 0;
+	size_t w = 1;
 
 	while(str += u8dec(str, &c), c)
 	{
@@ -114,13 +114,16 @@ size_t u8_strcpy(const char *str, char *dst)
 		w += curlen;
 	}
 
+	if(dst)
+		*dst = 0;
+
 	return w;
 }
 
 size_t u8_strncpy(const char *str, char *dst, size_t n)
 {
 	uchar_t c;
-	size_t w = 0;
+	size_t w = 1;
 	size_t len = 0;
 
 	while(str += u8dec(str, &c), c && len++ < n)
@@ -133,26 +136,32 @@ size_t u8_strncpy(const char *str, char *dst, size_t n)
 		w += curlen;
 	}
 
+	if(dst)
+		*dst = 0;
+
 	return w;
 }
 
 size_t u8_strccpy(const char *str, char *dst, size_t c)
 {
-	uchar_t c;
-	size_t w = 0;
+	uchar_t chr;
+	size_t w = 1;
 
-	while(str += u8dec(str, &c), c)
+	while(str += u8dec(str, &chr), chr)
 	{
-		size_t curlen = u8enc(c, NULL);
+		size_t curlen = u8enc(chr, NULL);
 
 		if(w + curlen > c)
 			break;
 		if(dst)
-			dst += u8enc(c, dst);	
+			dst += u8enc(chr, dst);
 		
 		w += curlen;
 	}
 
+	if(dst)
+		*dst = 0;
+	
 	return w;
 }
 
@@ -330,6 +339,7 @@ bool u8_strendI(const char *str, const char *end)
 
 	return u8_streqI(u8_strpos(str, slen - elen), end);
 }
+
 
 bool u8_isnorm(const char *str)
 {
