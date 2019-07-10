@@ -1,6 +1,6 @@
 INSTALL_DIR=/usr/include/unic
 
-precompile: uchar.gch util.gch utf8.gch
+precompile: uchar.gch util.gch utf8.gch u8string.gch
 
 %.gch: %.h 
 	c99 -Wall -Wextra $<

@@ -441,7 +441,7 @@ size_t u8_strnmap(const char *str, char *dst, size_t n, uchar_t (*map_f)(uchar_t
 	return w;
 }
 
-size_t u8_strnmap(const char *str, char *dst, size_t c, uchar_t (*map_f)(uchar_t))
+size_t u8_strcmap(const char *str, char *dst, size_t c, uchar_t (*map_f)(uchar_t))
 {
 	uchar_t chr;
 	size_t w = 1;
