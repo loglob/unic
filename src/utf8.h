@@ -70,6 +70,20 @@ static inline unsigned int _cl1(int i)
 	return c;
 }
 
+size_t u8ndec(const char *str, size_t n, uchar_t *c)
+{
+	// somewhat ad-hoc and garbage solution
+	if(n >= 4)
+		return u8dec(str, c);
+	
+	char buf[4] = {};
+
+	for (size_t i = 0; i < n; i++)
+		buf[i] = str[i];
+
+	return u8dec(buf, c);
+}
+
 size_t u8dec(const char *str, uchar_t *c)
 {
 	int cl = _cl1(str[0]);

@@ -146,22 +146,35 @@ enum unic_gc
 
 #pragma region utf8.h
 
+__nonnull((1))
 /** Reads the next unicode character from the given utf-8 encoded steam.
  * Returns UEOF on reading EOF.
- * @param f The file stream
+ * @param f The file stream. May not be NULL.
  * @returns The next unicode character in the stream
 */
 extern uchar_t fgetu8(FILE *f);
 
+__nonnull((2))
 /** Writes the given unicode character to the given utf-8 encoded stream.
  * @param c A unicode character
- * @param f A file stream
+ * @param f A file stream. May not be NULL.
 */
 extern void fputu8(uchar_t c, FILE *f);
 
+/** Like u8dec(), but reads the next utf-8 encoded character in the first n bytes of the given string.
+ * If n is 0, behaves as if it read NUL terminator and returns 0.
+ * @param str The utf-8 encoded buffer to read from. May be NULL if n is 0.
+ * @param n The maximum amount of bytes to read.
+ * @param c The location to store the character in. May be NULL to only determine the length of the next character.
+ * @returns The amount of bytes read.
+ */
+extern size_t u8ndec(const char *str, size_t n, uchar_t *c);
+
+__nonnull((1))
 /** Reads the next utf-8 encoded character from the given string.
  * Note that reading and re-encoding a character may change its length due to improper encoding in source streams.
- * @param str The utf-8 encoded buffer to read from.
+ * A well-encoded NUL terminater is treated as a character of length 1. 
+ * @param str The utf-8 encoded buffer to read from. May not be NULL.
  * @param c The location to store the character in. May be NULL to only determine the length of the next character.
  * @returns The amount of bytes read. */
 extern size_t u8dec(const char *str, uchar_t *c);
