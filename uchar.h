@@ -5,17 +5,13 @@
 #include <stdint.h>
 
 /* The unicode version used to generate the library */
-#define UNIC_VERSION "12.0.0"
-/* The amount of unicode characters assigned under the UNIC_VERSION unicode standard */
-#define UCHAR_COUNT 32840
+#define UNIC_VERSION 1300
+/* The unicode version as a human readable string */
+#define UNIC_VERSION_STRING "13.0.0"
 /* The highest valid unicode character */
-#define UCHAR_MAX 0x10FFFD
+#define UNIC_MAX 0x10FFFD
 /* The amount of bits needed to encode every valid unicode character */
-#define UCHAR_BIT 21
-/* The amount of unbroken assigned unicode characters in the unicode character database */
-#define UCHAR_IN_LINE 889
-/* Used to avoid Wsign-compare warnings without manual casting */
-#define UCHAR_EOF ((uchar_t)EOF)
+#define UNIC_BIT 21
 
 typedef uint32_t uchar_t;
 
