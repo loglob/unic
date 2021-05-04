@@ -1,7 +1,6 @@
 /* Defines the uchar_t datatype as well as multiple preprocessor macros for use with it and
 	the current version of the unicode standard */
-#ifndef _UNIC_UCHAR_H
-#define _UNIC_UCHAR_H
+#pragma once
 #include <stdint.h>
 
 /* The unicode version used to generate the library */
@@ -14,5 +13,3 @@
 #define UNIC_BIT 21
 
 typedef uint32_t uchar_t;
-
-#endif

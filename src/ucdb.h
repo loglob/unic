@@ -1,7 +1,6 @@
 /* ucdb.h: Defines the unicode character database.
 	Note that due to being over 33000 LOC, the file doesn't play nice with most IDEs. */
-#ifndef _UCDB_UCHAR_H
-#define _UCDB_UCHAR_H
+#pragma once
 #include <stdint.h>
 #include <stdlib.h>
 #include "uchar.h"
@@ -14,17 +13,15 @@
 /* The amount of unicode characters assigned under the UNIC_VERSION unicode standard */
 #define UCDB_COUNT 33797
 /* The highest character with its UCDB index and codepoint are equal */
-#define UCDB_DIRECT_MAX 887
+#define UCDB_DIRECT_MAX 0x0377
 
 /* The type of a ucdb entry */
 struct ucdb_entry
 {
 	uchar_t codepoint : UNIC_BIT;
-	/* Its general category / character class. */
 	enum unic_gc class : UNIC_GC_BITS;
-	/* The distance to its simple uppercase mapping (for codepoints) */
+
 	signed int uppercaseDelta : 17;
-	/* The distance to its simple lowercase mapping (for codepoints) */
 	signed int lowercaseDelta : 17;
 } __attribute__((packed));
 
@@ -33914,7 +33911,7 @@ const struct ucdb_entry ucdb[] =
 };
 
  /* Gets the ucdb entry for the given character */
-const struct ucdb_entry *ucdb_get(uchar_t u)
+static const struct ucdb_entry *ucdb_get(uchar_t u)
 {
 	if(u <= UCDB_DIRECT_MAX)
 		return ucdb + u;
@@ -33936,5 +33933,3 @@ const struct ucdb_entry *ucdb_get(uchar_t u)
 
 	return NULL;
 }
-
-#endif

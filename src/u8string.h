@@ -1,5 +1,5 @@
-#ifndef _UNIC_UTF8_STRING_H
-#define _UNIC_UTF8_STRING_H
+// u8string.h: Implements string functions for utf-8 strings
+#pragma once
 #include <stddef.h>
 #include <stdbool.h>
 #include "utf8.h"

@@ -1,6 +1,5 @@
 /* util.h: Provides functions for working with unicode characters */
-#ifndef _UNIC_UTIL_H
-#define _UNIC_UTIL_H
+#pragma once
 #include "uchar.h"
 #include "ucdb.h"
 #include <ctype.h>
@@ -55,5 +54,3 @@ uchar_t uchar_title(uchar_t c)
 
 	return uchar_upper(c);
 }
-
-#endif

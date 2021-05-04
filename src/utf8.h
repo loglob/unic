@@ -1,23 +1,7 @@
 /* utf8.h: Allows for working with utf-8 encoded streams or buffers. */
-#ifndef _UNIC_UTF8_H
-#define _UNIC_UTF8_H
+#pragma once
 #include "uchar.h"
 #include <stdio.h>
-
-/* Reads the next unicode character from the given utf-8 encoded stream.
-	Returns EOF on reading EOF. */
-uchar_t fgetu8(FILE *);
-/* Writes the given unicode character to the given utf-8 encoded stream. */
-void fputu8(uchar_t, FILE *);
-/* Reads the next utf-8 encoded character from the given string.
-	Returnes the amount of bytes read.
-	The character is Stored in *c.
-	c may be NULL to only determine the length of the next character. */
-size_t u8dec(const char *str, uchar_t *c);
-/* Writes the given unicode character to the buffer.
-	Returnes the amount of bytes written.
-	buf may be NULL to only determine the length of the given character. */
-size_t u8enc(uchar_t uc, char *buf);
 
 inline static size_t u8len(uchar_t c)
 {
@@ -185,5 +169,3 @@ void fputu8(uchar_t c, FILE *f)
 	for(size_t i = 0; i < l; i++)
 		fputc(buf[i], f);
 }
-
-#endif
