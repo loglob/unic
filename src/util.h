@@ -5,52 +5,39 @@
 #include <ctype.h>
 
 /* Retrieves the unicode character class of the given character */
-unic_class_t uchar_class(uchar_t c)
+enum unic_gc uchar_class(uchar_t c)
 {
-	const ucdb_entry_t *e = ucdb_get(c);
+	const struct ucdb_entry *e = ucdb_get(c);
 	return e ? e->class : UCLASS_UNASSIGNED;
+}
+
+bool uclass_is(enum unic_gc general, enum unic_gc specific)
+{
+	return general == specific
+		|| (general & ((1 << UNIC_GC_SUB_BITS) - 1) == 0 && (general >> UNIC_GC_SUB_BITS == specific >> UNIC_GC_SUB_BITS));
+}
+
+bool uchar_is(uchar_t chr, enum unic_gc class)
+{
+	return uclass_is(class, uchar_class(chr));
 }
 
 /* Determines if the given unicode character is whitespace */
 int u_isspace(uchar_t c)
 {
-	return (uchar_class(c) & UCCLASS_SEPARATOR)
-		|| (c < 0x80 && isspace(c));
-}
-
-#define CC(a,b) a##b
-#define MAPFUNC(n) uchar_t CC(uchar_, n)(uchar_t c) \
-{\
-	const ucdb_entry_t *e = ucdb_get(c);\
-	return (e && e->CC(n, caseMap)) ? e->CC(n, caseMap) : c;\
+	return (c < 0x80 && isspace(c)) || uchar_is(c, UCLASS_SEPARATOR);
 }
 
 /* Returns the simple lowercase mapping of the given character */
-MAPFUNC(lower)
-/* Returns the simple uppercase mapping of the given character */
-MAPFUNC(upper)
-
-#undef MAPFUNC
-#undef CC
-
-/* Returns the simple titlecase mapping of the given character */
-uchar_t uchar_title(uchar_t c)
+uchar_t uchar_lower(uchar_t c)
 {
-	if(c < TCMIN || c > TCMAX)
-		return uchar_upper(c);
+	const struct ucdb_entry *e = ucdb_get(c);
+	return e ? c + e->lowercaseDelta : c;
+}
 
-	size_t l = 0, r = sizeof(ucdb_tcmap) / sizeof(ucdb_tcmap[0]);
-
-	while(l <= r)
-	{
-		size_t m = (l + r) / 2;
-		if(ucdb_tcmap[m].c < c)
-			l = m + 1;
-		else if(ucdb_tcmap[m].c > c)
-			r = m - 1;
-		else
-			return ucdb_tcmap[m].tc;
-	}
-
-	return uchar_upper(c);
+/* Returns the simple uppercase mapping of the given character */
+uchar_t uchar_upper(uchar_t c)
+{
+	const struct ucdb_entry *e = ucdb_get(c);
+	return e ? c + e->uppercaseDelta : c;
 }
