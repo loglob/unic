@@ -1,6 +1,3 @@
 #include "../include/unic.h"
-#include "uchar.h"
-#include "ucdb.h"
-#include "utf8.h"
 #include "u8string.h"
 #include "util.h"
