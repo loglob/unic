@@ -3,6 +3,7 @@
 #ifndef UNIC_VERSION
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 /* The unicode version used to generate the library */
 #define UNIC_VERSION 1300
@@ -163,15 +164,58 @@ extern void fputu8(uchar_t c, FILE *f);
  * @param str The utf-8 encoded buffer to read from.
  * @param c The location to store the character in. May be NULL to only determine the length of the next character.
  * @returns The amount of bytes read. */
-size_t u8dec(const char *str, uchar_t *c);
+extern size_t u8dec(const char *str, uchar_t *c);
 
 /** Writes the given unicode character to the buffer.
  * @param uc The unicode character
  * @param buf The buffer to write the character to. May be NULL to only determine its length.
  * @returns The amount of bytes written. */
-size_t u8enc(uchar_t uc, char *buf);
+extern size_t u8enc(uchar_t uc, char *buf);
 
 #pragma endregion
 
+#pragma region util.h
+
+/** Retrieves the unicode character class of the given character
+ * @param c The character
+ * @returns Its general category, or UCLASS_UNASSIGNED if it is invalid.
+*/
+extern enum unic_gc uchar_class(uchar_t c);
+
+/** Determines if two unicode character classes are the same or compatible
+ * @param general A general category, may be a major category
+ * @param specific A general category
+ * @returns Both classes are the same,
+ *	or general is a major category which specific is a subcategory of.
+*/
+extern bool uclass_is(enum unic_gc general, enum unic_gc specific);
+
+/** Determines if a unicode character is of a unicode class
+ * @param chr The character
+ * @param class The general category, may be a major category
+ * @returns The character is of the given class, or of the given major category.
+*/
+extern bool uchar_is(uchar_t chr, enum unic_gc class);
+
+/** Determines if the given unicode character is whitespace
+ * @param c The character
+ * @returns c is in the SEPARATOR general category,
+ *	or an ascii control character that is considered whitespace, as per libc's isspace() 
+*/
+extern int u_isspace(uchar_t c);
+
+/** Returns the simple lowercase mapping of the given character
+ * @param c The character
+ * @returns Its simple lowercase mapping, or the character itself if it doesn't exist.
+*/
+extern uchar_t uchar_lower(uchar_t c);
+
+/** Returns the simple uppercase mapping of the given character
+ * @param c The character
+ * @returns Its simple uppercase mapping, or the character itself if it doesn't exist.
+*/
+extern uchar_t uchar_upper(uchar_t c);
+
+#pragma endregion
 
 #endif
