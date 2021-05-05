@@ -9,8 +9,8 @@ size_t u8_strlen(const char *str)
 {
 	size_t len = 0;
 
-	for (len = 0; str[len];)
-		len += u8dec(str + len, NULL);
+	for (size_t c = 0; str[c]; len++)
+		c += u8dec(str + c, NULL);
 	
 	return len;
 }
