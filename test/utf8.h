@@ -12,17 +12,23 @@ void test_utf8_overencoding()
 		},
 		{
 			// ¢
+			NULL,
 			"\xC2\xA2",
-			"\xE0\x82\xA2"
+			"\xE0\x82\xA2",
 			"\xF0\x80\x82\xA2"
 		},
 		{
 			// €
+			NULL,
+			NULL,
 			"\xE2\x82\xAC",
 			"\xF0\x82\x82\xAC",
 		},
 		{
 			// 𐍈
+			NULL,
+			NULL,
+			NULL,
 			"\xF0\x90\x8D\x88"
 		}
 	};

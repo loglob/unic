@@ -29,4 +29,3 @@ test: out/test
 out/test: test/test.c lib/libunic.so test/*.h
 	mkdir -p out
 	cc -L./lib/ -Wl,-rpath=./lib -Wall -Wextra -g $< -o $@ -lunic
-	./$@
