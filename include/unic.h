@@ -246,6 +246,7 @@ extern uchar_t uchar_upper(uchar_t c);
 #ifndef _REGION_u8string_h
 __nonnull((1))
 /** Determines the amount of unicode characters in the given utf-8 string
+ * Does not count the NUL terminator.
  * @param str A utf-8 string. May not be NULL.
  * @returns The amount of unicode characters in str.
 */
