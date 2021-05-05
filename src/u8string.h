@@ -128,35 +128,30 @@ const char *u8_strrchr(const char *str, uchar_t chr)
 
 const char *u8_strstr(const char *haystack, const char *needle)
 {
-	uchar_t c;
-	size_t curlen;
-	uchar_t n0;
-	u8dec(needle, &n0);
+	size_t n = u8_strlen(needle);
 
-	while(curlen = u8dec(haystack, &c), c)
-	{
-		if(c == n0 && u8_strstart(haystack, needle))
-			return haystack;
-		
-		haystack += curlen;
-	}
+	SCANFUNC(u8_strneq(haystack + i, needle, n))
+}
+
+const char *u8_strrstr(const char *haystack, const char *needle)
+{
+	size_t n = u8_strlen(needle);
+
+	RSCANFUNC(u8_strneq(haystack + i, needle, n))
 }
 
 const char *u8_strstrI(const char *haystack, const char *needle)
 {
-	uchar_t c;
-	size_t curlen;
-	uchar_t n0;
-	u8dec(needle, &n0);
-	n0 = uchar_lower(n0);
+	size_t n = u8_strlen(needle);
 
-	while(curlen = u8dec(haystack, &c), c)
-	{
-		if(uchar_lower(c) == n0 && u8_strstartI(haystack, needle))
-			return haystack;
-		
-		haystack += curlen;
-	}
+	SCANFUNC(u8_strneqI(haystack + i, needle, n))
+}
+
+const char *u8_strrstrI(const char *haystack, const char *needle)
+{
+	size_t n = u8_strlen(needle);
+
+	RSCANFUNC(u8_strneqI(haystack + i, needle, n))
 }
 
 

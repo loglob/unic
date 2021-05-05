@@ -345,13 +345,35 @@ __nonnull((1,2))
 extern const char *u8_strstr(const char *haystack, const char *needle);
 
 __nonnull((1,2))
+/** Finds the last occurrence of the given substring in the given utf-8 encoded string.
+ * Note that, for utf-8 normalized strings, a loop based on strstr achieves the same and will be more efficient.
+ * @param haystack The string to search in. May not be NULL.
+ * @param needle The string to search for. May not be NULL.
+ * @returns A pointer to the start of the last occurrence of the given substring,
+ *	or NULL if the string doesn't contain the substring. 
+*/
+extern const char *u8_strrstr(const char *haystack, const char *needle);
+
+__nonnull((1,2))
 /** Finds the first occurrence of a case-insensitive variation of the given substring in the given string.
+ * See uchar_alike() for specifics on case-insensitivity.
  * @param haystack The string to search in. May not be NULL.
  * @param needle The string to search for. May not be NULL.
  * @returns A pointer to the start of the first occurrence of the given substring,
  *	or NULL is the string doesn't contain a variation of the substring.
 */
 extern const char *u8_strstrI(const char *haystack, const char *needle);
+
+__nonnull((1,2))
+/** Finds the last occurrence of a case-insensitive variation of the given substring in the given string.
+ * See uchar_alike() for specifics on case-insensitivity.
+ * @param haystack The string to search in. May not be NULL.
+ * @param needle The string to search for. May not be NULL.
+ * @returns A pointer to the start of the first occurrence of the given substring,
+ *	or NULL is the string doesn't contain a variation of the substring.
+*/
+extern const char *u8_strrstrI(const char *haystack, const char *needle);
+
 
 __nonnull((1,2))
 /** Determines if two utf-8 encoded strings contain the same characters.
