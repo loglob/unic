@@ -19,7 +19,11 @@ clean:
 uninstall:
 	rm -r $(INSTALL_DIR)
 
-out/test: test/test.c lib/unic
+.PHONY: test
+test: out/test
+	./$<
+
+out/test: test/test.c lib/unic test/*.h
 	mkdir -p out
-	c99 -Wall -Wextra $< ./lib/unic -o $@
+	c99 -Wall -Wextra $< lib/unic -o $@
 	./$@
