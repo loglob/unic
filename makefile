@@ -19,3 +19,7 @@ clean:
 uninstall:
 	rm -r $(INSTALL_DIR)
 
+out/test: test/test.c lib/unic
+	mkdir -p out
+	c99 -Wall -Wextra $< ./lib/unic -o $@
+	./$@
