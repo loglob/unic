@@ -1,9 +1,9 @@
-/* Defines the uchar_t datatype as well as multiple preprocessor macros for use with it and
-	the current version of the unicode standard */
+/* The include file for the unic library */
 #ifndef UNIC_VERSION
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 /* The unicode version used to generate the library */
 #define UNIC_VERSION 1300
@@ -13,9 +13,10 @@
 #define UNIC_MAX 0x10FFFD
 /* The amount of bits needed to encode every valid unicode character */
 #define UNIC_BIT 21
-
+/* Type-correct EOF for unicode functions */
 #define UEOF ((uchar_t)-1)
 
+/* A single unicode character */
 typedef uint32_t uchar_t;
 
 /* The amount of bits taken up by an enum unic_gc value */
@@ -143,8 +144,8 @@ enum unic_gc
 
 };
 
-
-#pragma region utf8.h
+/* Bindings for the library's utf8 component */
+#ifndef _REGION_utf8_h
 
 __nonnull((1))
 /** Reads the next unicode character from the given utf-8 encoded steam.
@@ -185,9 +186,10 @@ extern size_t u8dec(const char *str, uchar_t *c);
  * @returns The amount of bytes written. */
 extern size_t u8enc(uchar_t uc, char *buf);
 
-#pragma endregion
+#endif // region ut8.h
 
-#pragma region util.h
+/* Bindings for the library's utility component */
+#ifndef _REGION_util_h
 
 /** Retrieves the unicode character class of the given character
  * @param c The character
@@ -238,9 +240,10 @@ extern uchar_t uchar_lower(uchar_t c);
 */
 extern uchar_t uchar_upper(uchar_t c);
 
-#pragma endregion
+#endif // region util.h
 
-#pragma region u8string.h
+/* Bindings for the library's utf8 string handling component */
+#ifndef _REGION_u8string_h
 __nonnull((1))
 /** Determines the amount of unicode characters in the given utf-8 string
  * @param str A utf-8 string. May not be NULL.
@@ -465,6 +468,7 @@ __nonnull((4))
  * @returns The amount of bytes written to dst, including the NUL terminator.
 */
 extern size_t u8_strcmap(const char *str, char *dst, size_t c, uchar_t (*map_f)(uchar_t));
-#pragma endregion
+
+#endif
 
 #endif

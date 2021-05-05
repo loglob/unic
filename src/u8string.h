@@ -7,7 +7,6 @@
 
 size_t u8_strlen(const char *str)
 {
-	uchar_t c;
 	size_t len = 0;
 
 	for (len = 0; str[len];)
@@ -99,44 +98,33 @@ uchar_t u8_strat(const char *str, size_t pos)
  * @param c The current character
  * @param l Its encoded length
 */
-#define SCAN(...) { size_t ic = 0; for(size_t i = 0; str[i]; ic++) { uchar_t c; const size_t l = u8dec(str + i, &c); { __VA_ARGS__ } i += l; }
-
-/** Expands to an iteration over at most n character in the string
- * @param n The limit on characters in the string
- * @param str The string to iterate over
- * @param ic The character index
- * @param i The byte index
- * @param c The current character
- * @param l Its encoded length
-*/
-#define SCAN_N(...) { size_t ic = 0; for(size_t i = 0; ic < n && str[i]; ic++) { uchar_t c; const size_t l = u8dec(str + i, &c); { __VA_ARGS__ } i += l; }
-
-/** Expands to an iteration over at most lim character in the string
- * @param lim The limit on bytes in the string
- * @param str The string to iterate over
- * @param ic The character index
- * @param i The byte index
- * @param c The current character
- * @param l Its encoded length
-*/
-#define SCAN_C(...) { size_t ic = 0; for(size_t i = 0; i < lim && str[i]; ic++) { uchar_t c; const size_t l = u8ndec(str + i, lim - i, &c); { __VA_ARGS__ } i += l; }
+#define SCAN(...) { \
+	size_t ic = 0; \
+	for(size_t i = 0; str[i]; ic++) \
+	{ \
+		uchar_t c; \
+		const size_t l = u8dec(str + i, &c); \
+		{ __VA_ARGS__ } \
+	i += l; \
+	} \
+}
 
 #define SCANFUNC(cond) { \
-		SCAN(\
+		SCAN({\
 			if(cond) \
 				return str + i; \
 			i += l; \
-		) \
+		}) \
 	return NULL; \
 }
 
 #define RSCANFUNC(cond) { \
 		const char *ret = NULL; \
-		SCAN(\
+		SCAN({\
 			if(cond) \
 				ret = str + i; \
 			i += l; \
-		) \
+		}) \
 	return ret; \
 }
 
