@@ -173,11 +173,28 @@ bool u8_streq(const char *a, const char *b)
 	return false;
 }
 
+bool u8_strneq(const char *a, const char *b, size_t n)
+{
+	uchar_t ac, bc;
+	size_t i = 0;
+
+	if(n == 0)
+		return true;
+
+	while(a += u8dec(a, &ac), b += u8dec(b, &bc), ac == bc)
+	{
+		if(++i >= n || !ac)
+			return true;
+	}
+
+	return false;
+}
+
 bool u8_streqI(const char *a, const char *b)
 {
 	uchar_t ac, bc;
 
-	while(a += u8dec(a, &ac), b += u8dec(b, &bc), uchar_lower(ac) == uchar_lower(bc))
+	while(a += u8dec(a, &ac), b += u8dec(b, &bc), uchar_alike(ac, bc))
 	{
 		if(!ac)
 			return true;
@@ -186,52 +203,21 @@ bool u8_streqI(const char *a, const char *b)
 	return false;
 }
 
-bool u8_strstart(const char *str, const char *start)
+bool u8_strneqI(const char *a, const char *b, size_t n)
 {
 	uchar_t ac, bc;
+	size_t i = 0;
 
-	while(str += u8dec(str, &ac), start += u8dec(start, &bc), bc)
+	if(n == 0)
+		return true;
+
+	while(a += u8dec(a, &ac), b += u8dec(b, &bc), uchar_alike(ac, bc))
 	{
-		if(ac != bc)
-			return false;
+		if(++i >= n || !ac)
+			return true;
 	}
 
-	return true;
-}
-
-bool u8_strstartI(const char *str, const char *start)
-{
-	uchar_t ac, bc;
-
-	while(str += u8dec(str, &ac), start += u8dec(start, &bc), bc)
-	{
-		if(uchar_lower(ac) != uchar_lower(bc))
-			return false;
-	}
-
-	return true;
-}
-
-bool u8_strend(const char *str, const char *end)
-{
-	size_t slen = u8_strlen(str);
-	size_t elen = u8_strlen(end);
-
-	if(elen > slen)
-		return false;
-
-	return u8_streq(u8_strpos(str, slen - elen), end);
-}
-
-bool u8_strendI(const char *str, const char *end)
-{
-	size_t slen = u8_strlen(str);
-	size_t elen = u8_strlen(end);
-
-	if(elen > slen)
-		return false;
-
-	return u8_streqI(u8_strpos(str, slen - elen), end);
+	return false;
 }
 
 

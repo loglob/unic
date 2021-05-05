@@ -362,14 +362,31 @@ __nonnull((1,2))
 */
 extern bool u8_streq(const char *a, const char *b);
 
+__nonnull()
+/** Determines if the first n characters of two utf-8 encoded strings are the same.
+ * @param a A string. May not be NULL.
+ * @param b Another string. May not be NULL.
+ * @returns a and b contain the same first n characters.
+*/
+extern bool u8_strneq(const char *a, const char *b, size_t n);
+
 __nonnull((1,2))
 /** Determines if two utf-8 encoded strings contain the same characters.
- * Case-insensitive.
+ * Case-insensitive, see uchar_alike() for specifics.
  * @param a A string. May not be NULL.
  * @param b Another string. May not be NULL.
  * @returns a and b contain the same characters, ignoring case.
 */
 extern bool u8_streqI(const char *a, const char *b);
+
+__nonnull()
+/** Determines if the first n characters of two utf-8 encoded strings are the same.
+ * Case-insensitive, see uchar_alike() for specifics.
+ * @param a A string. May not be NULL.
+ * @param b Another string. May not be NULL.
+ * @returns a and b contain the same first n characters, ignoring case.
+*/
+extern bool u8_strneqI(const char *a, const char *b, size_t n);
 
 __nonnull((1))
 /** Determines if the given utf-8 encoded string is normalized utf-8.
