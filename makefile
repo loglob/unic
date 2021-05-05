@@ -10,7 +10,8 @@ out/test: test/test.c lib/libunic.so test/*.h
 	cc -L./lib/ -Wl,-rpath=./lib -Wall -Wextra -g $< -o $@ -lunic
 
 lib/libunic.so: out/unic.o
-	cc -shared -o $@ $<
+	mkdir -p lib
+	cc -shared $< -o $@
 
 out/unic.o: src/unic.c src/*.h include/unic.h
 	mkdir -p out
@@ -25,6 +26,3 @@ uninstall:
 
 clean:
 	rm -fr lib out
-
-uninstall:
-	rm -r $(INSTALL_DIR)
