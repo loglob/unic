@@ -10,9 +10,9 @@ size_t u8_strlen(const char *str)
 	uchar_t c;
 	size_t len = 0;
 
-	while(str += u8dec(str, &c), c)
-		len++;
-
+	for (len = 0; str[len];)
+		len += u8dec(str, NULL);
+	
 	return len;
 }
 
@@ -39,70 +39,24 @@ size_t u8_strclen(const char *str, size_t lim)
 	return c;
 }
 
+static uchar_t uchar_id(uchar_t x)
+{
+	return x;
+}
+
 size_t u8_strcpy(const char *str, char *dst)
 {
-	uchar_t c;
-	size_t w = 1;
-
-	while(str += u8dec(str, &c), c)
-	{
-		size_t curlen = u8enc(c, dst);
-
-		if(dst)
-			dst += curlen;
-
-		w += curlen;
-	}
-
-	if(dst)
-		*dst = 0;
-
-	return w;
+	return u8_strmap(str, dst, uchar_id);
 }
 
 size_t u8_strncpy(const char *str, char *dst, size_t n)
 {
-	uchar_t c;
-	size_t w = 1;
-	size_t len = 0;
-
-	while(str += u8dec(str, &c), c && len++ < n)
-	{
-		size_t curlen = u8enc(c, dst);
-
-		if(dst)
-			dst += curlen;
-
-		w += curlen;
-	}
-
-	if(dst)
-		*dst = 0;
-
-	return w;
+	return u8_strnmap(str, dst, n, uchar_id);
 }
 
 size_t u8_strccpy(const char *str, char *dst, size_t c)
 {
-	uchar_t chr;
-	size_t w = 1;
-
-	while(str += u8dec(str, &chr), chr)
-	{
-		size_t curlen = u8enc(chr, NULL);
-
-		if(w + curlen > c)
-			break;
-		if(dst)
-			dst += u8enc(chr, dst);
-		
-		w += curlen;
-	}
-
-	if(dst)
-		*dst = 0;
-	
-	return w;
+	return u8_strcmap(str, dst, c, uchar_id);
 }
 
 const char *u8_strpos(const char *str, size_t pos)
@@ -316,72 +270,54 @@ bool u8_isvalid(const char *str)
 
 size_t u8_strmap(const char *str, char *dst, uchar_t (*map_f)(uchar_t))
 {
-	uchar_t c;
-	size_t w = 1;
+	size_t r = 0, w = 0;
 
-	while(str += u8dec(str, &c), c)
+	while(str[r])
 	{
+		uchar_t c;
+		r += u8dec(str + r, &c);
 		c = map_f(c);
-	
-		size_t curlen = u8enc(c, dst);
-
-		if(dst)
-			dst += curlen;
-
-		w += curlen;
+		w += u8enc(c, dst ? dst + w : NULL);
 	}
 
 	if(dst)
-		*dst = 0;
+		dst[w] = 0;
 
-	return w;
+	return w + 1;
 }
 
 size_t u8_strnmap(const char *str, char *dst, size_t n, uchar_t (*map_f)(uchar_t))
 {
-	uchar_t c;
-	size_t w = 1;
-	size_t len = 0;
+	size_t r = 0, w = 0;
 
-	while(str += u8dec(str, &c), c && len++ < n)
+	for (size_t i = 0; i < n && str[r]; i++)
 	{
+		uchar_t c;
+		r += u8dec(str + r, &c);
 		c = map_f(c);
-
-		size_t curlen = u8enc(c, dst);
-
-		if(dst)
-			dst += curlen;
-
-		w += curlen;
+		w += u8enc(c, dst ? dst + w : NULL);
 	}
 
 	if(dst)
-		*dst = 0;
+		dst[w] = 0;
 
-	return w;
+	return w + 1;	
 }
 
-size_t u8_strcmap(const char *str, char *dst, size_t c, uchar_t (*map_f)(uchar_t))
+size_t u8_strcmap(const char *str, char *dst, size_t lim, uchar_t (*map_f)(uchar_t))
 {
-	uchar_t chr;
-	size_t w = 1;
+	size_t r = 0, w = 0;
 
-	while(str += u8dec(str, &chr), chr)
+	while(r < lim && str[r])
 	{
+		uchar_t c;
+		r += u8ndec(str + r, lim - r, &c);
 		c = map_f(c);
-
-		size_t curlen = u8enc(chr, NULL);
-
-		if(w + curlen > c)
-			break;
-		if(dst)
-			dst += u8enc(chr, dst);
-		
-		w += curlen;
+		w += u8enc(c, dst ? dst + w : NULL);
 	}
 
 	if(dst)
-		*dst = 0;
-	
-	return w;
+		dst[w] = 0;
+
+	return w + 1;	
 }

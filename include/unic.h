@@ -243,7 +243,7 @@ size_t u8_strlen(const char *str);
  * If the string contains fewer unicode characters, counts the entire string's length.
  * Doesn't count the final NUL terminator.
  * @param str A string. May be NULL only if n is 0.
- * @param n The amount of unicode characters.
+ * @param n The maximum amount of unicode characters.
  * @returns The amount of bytes taken up by the first n characters.
 */
 size_t u8_strnlen(const char *str, size_t n);
@@ -268,7 +268,7 @@ size_t u8_strcpy(const char *str, char *dst);
 /** Copies at most n unicode characters from str to dst.
  * Every character written to dst is guaranteed to be utf-8 normalized.
  * If dst is NULL, no write operations are performed but the correct byte amount is returned.
- * @param str The utf-8 encoded source string. May be NULL if n is NULL.
+ * @param str The utf-8 encoded source string. May be NULL if n is 0.
  * @param dst The destination buffer. May be NULL to determine required buffer size.
  * @param n The amount of unicode characters to copy.
  * @returns The amount of bytes written to dst, including the NUL terminator. */
@@ -277,7 +277,7 @@ size_t u8_strncpy(const char *str, char *dst, size_t n);
 /** Copies at most c bytes from str to dst.
  * Every character written to dst is guaranteed to be utf-8 normalized.
  * If dst is NULL, no write operations are performed but the correct byte amount is returned.
- * @param str The utf-8 encoded source string. May be NULL if c is NULL.
+ * @param str The utf-8 encoded source string. May be NULL if c is 0.
  * @param dst The destination buffer. May be NULL to determine required buffer size.
  * @param c The maximum amount of bytes to copy (note that due to character reencoding this is NOT a limit on dst).  
  * @returns The amount of bytes written to dst, including the NUL terminator. */
