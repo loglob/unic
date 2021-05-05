@@ -59,7 +59,29 @@ void test_utf8_overencoding()
 	}
 }
 
+void test_utf8_underencoding()
+{
+	char *data[] = {
+		"\xC0",
+		"\xE0",
+		"\xF0",
+		"\xE0\x8F",
+		"\xF0\x8F",
+		"\xF0\x8F\x8F",
+	};
+
+	for (size_t i = 0; i < sizeof(data) / sizeof(*data); i++)
+	{
+		for (size_t j = 0; data[i][j]; j++)
+		{
+			size_t l = u8dec(&data[i][j], NULL);
+			eq_i(l, 1);
+		}
+	}
+}
+
 void test_utf8()
 {
 	test_utf8_overencoding();
+	test_utf8_underencoding();
 }
