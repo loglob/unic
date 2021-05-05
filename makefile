@@ -1,8 +1,11 @@
 INSTALL_DIR=/usr/include/unic
 
-lib/unic: src/unic.c src/*.h include/unic.h
+lib/libunic.so: lib/unic.o
+	cc -shared -o $@ $<
+
+lib/unic.o: src/unic.c src/*.h include/unic.h
 	mkdir -p lib
-	gcc -Ofast -Wall -Wextra -c $< -o $@
+	cc -fpic -Ofast -Wall -Wextra -c $< -o $@
 
 precompile: uchar.gch util.gch utf8.gch u8string.gch
 
@@ -14,7 +17,7 @@ install:
 	cp $(CURDIR)/*.*h $(INSTALL_DIR)
 
 clean:
-	rm -r lib
+	rm -fr lib out
 
 uninstall:
 	rm -r $(INSTALL_DIR)
@@ -23,7 +26,7 @@ uninstall:
 test: out/test
 	./$<
 
-out/test: test/test.c lib/unic test/*.h
+out/test: test/test.c lib/libunic.so test/*.h
 	mkdir -p out
-	c99 -Wall -Wextra $< lib/unic -o $@
+	cc -L./lib/ -Wl,-rpath=./lib -Wall -Wextra -g $< -o $@ -lunic
 	./$@
