@@ -14,6 +14,26 @@ enum unic_gc uchar_class(uchar_t c)
 	return e ? e->class : UCLASS_UNASSIGNED;
 }
 
+bool uchar_alike(uchar_t a, uchar_t b)
+{
+	if(a == b)
+		return true;
+
+	const struct ucdb_entry *ea = ucdb_get(a), *eb = ucdb_get(b);
+	
+	if(!ea || !eb)
+		return false;
+
+	const uchar_t ua = a + ea->uppercaseDelta;
+	const uchar_t ub = b + eb->uppercaseDelta;
+	const uchar_t la = a + ea->lowercaseDelta;
+	const uchar_t lb = b + eb->lowercaseDelta;
+
+	// im fairly certain that no 2 characters actually match the u_ = l_ rules, they are mostly for completeness
+	return ua == lb || ua == b || ua == ub || a == ub
+		|| la == ub || la == b || la == lb || a == lb;
+}
+
 bool uclass_is(enum unic_gc general, enum unic_gc specific)
 {
 	return general == specific

@@ -195,6 +195,15 @@ extern size_t u8enc(uchar_t uc, char *buf);
 */
 extern enum unic_gc uchar_class(uchar_t c);
 
+/** Determines if two unicode characters are alike/similar.
+ * This means that some combination of the simple lower- or uppercase mapping produces the same character
+ * i.e.: ∃f,g ∈ { lower, upper, id }: f(a) = g(b)
+ * @param a A character
+ * @param b Another character
+ * @returns a is similar to b
+*/
+extern bool uchar_alike(uchar_t a, uchar_t b);
+
 /** Determines if two unicode character classes are the same or compatible
  * @param general A general category, may be a major category
  * @param specific A general category
@@ -372,7 +381,8 @@ extern bool u8_isnorm(const char *str);
 
 __nonnull((1))
 /** Determines if the given utf-8 encoded string is valid utf-8.
- * This means that the every character in the string is allocated in the unicode standard.
+ * This means that the every character in the string is assigned in the unicode standard.
+ * Private use characters are considered valid.
  * Invalid encodings are allowed and are handled via normal fallbacks.
  * @param str A string. May not be NULL.
  * @returns str is valid utf-8.
