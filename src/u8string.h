@@ -11,7 +11,7 @@ size_t u8_strlen(const char *str)
 	size_t len = 0;
 
 	for (len = 0; str[len];)
-		len += u8dec(str, NULL);
+		len += u8dec(str + len, NULL);
 	
 	return len;
 }
@@ -39,6 +39,8 @@ size_t u8_strclen(const char *str, size_t lim)
 	return c;
 }
 
+
+// used with the strmap functions
 static uchar_t uchar_id(uchar_t x)
 {
 	return x;
@@ -59,22 +61,19 @@ size_t u8_strccpy(const char *str, char *dst, size_t c)
 	return u8_strcmap(str, dst, c, uchar_id);
 }
 
+
 const char *u8_strpos(const char *str, size_t pos)
 {
-	uchar_t c;
-	size_t curlen;
-	size_t curind = 0;
+	size_t r = 0;
+	size_t i;
 
-	while(curlen = u8dec(str, &c), c)
-	{
-		if(curind == pos)
-			return str;
-
-		str += curlen;
-		curind++;
-	}
-
-	return NULL;
+	for (i = 0; i < pos && str[r]; i++)
+		r += u8dec(str + i, NULL);
+	
+	if(i < pos)
+		return NULL;
+	
+	return str + r;
 }
 
 uchar_t u8_strat(const char *str, size_t pos)
@@ -93,65 +92,93 @@ uchar_t u8_strat(const char *str, size_t pos)
 		return 0;
 }
 
-const char *u8_strchr(const char *str, uchar_t chr)
-{
-	uchar_t c;
-	size_t curlen;
+/** Expands to an iteration over every character in the string
+ * @param str The string to iterate over
+ * @param ic The character index
+ * @param i The byte index
+ * @param c The current character
+ * @param l Its encoded length
+*/
+#define SCAN(...) { size_t ic = 0; for(size_t i = 0; str[i]; ic++) { uchar_t c; const size_t l = u8dec(str + i, &c); { __VA_ARGS__ } i += l; }
 
-	while(curlen = u8dec(str, &c), c)
-	{
-		if(c == chr)
-			return str;
+/** Expands to an iteration over at most n character in the string
+ * @param n The limit on characters in the string
+ * @param str The string to iterate over
+ * @param ic The character index
+ * @param i The byte index
+ * @param c The current character
+ * @param l Its encoded length
+*/
+#define SCAN_N(...) { size_t ic = 0; for(size_t i = 0; ic < n && str[i]; ic++) { uchar_t c; const size_t l = u8dec(str + i, &c); { __VA_ARGS__ } i += l; }
 
-		str += curlen;
-	}
+/** Expands to an iteration over at most lim character in the string
+ * @param lim The limit on bytes in the string
+ * @param str The string to iterate over
+ * @param ic The character index
+ * @param i The byte index
+ * @param c The current character
+ * @param l Its encoded length
+*/
+#define SCAN_C(...) { size_t ic = 0; for(size_t i = 0; i < lim && str[i]; ic++) { uchar_t c; const size_t l = u8ndec(str + i, lim - i, &c); { __VA_ARGS__ } i += l; }
 
-	return NULL;
+#define SCANFUNC(cond) { \
+		SCAN(\
+			if(cond) \
+				return str + i; \
+			i += l; \
+		) \
+	return NULL; \
 }
+
+#define RSCANFUNC(cond) { \
+		const char *ret = NULL; \
+		SCAN(\
+			if(cond) \
+				ret = str + i; \
+			i += l; \
+		) \
+	return ret; \
+}
+
+const char *u8_strchr(const char *str, uchar_t chr)
+	SCANFUNC(c == chr)
 
 const char *u8_strrchr(const char *str, uchar_t chr)
-{
-	const char *loc = NULL;
-	uchar_t c;
-	size_t curlen;
+	RSCANFUNC(c == chr)
 
-	while(curlen = u8dec(str, &c), c)
-	{
-		if(c == chr)
-			loc = str;
+const char *u8_strchrI(const char *str, uchar_t chr)
+	SCANFUNC(uchar_alike(c, chr))
 
-		str += curlen;
-	}
+const char *u8_strrchrI(const char *str, uchar_t chr)
+	RSCANFUNC(uchar_alike(c, chr))
 
-	return loc;
-}
 
-const char *u8_strstr(const char *haystack, const char *needle)
+const char *u8_strstr(const char *str, const char *needle)
 {
 	size_t n = u8_strlen(needle);
 
-	SCANFUNC(u8_strneq(haystack + i, needle, n))
+	SCANFUNC(u8_strneq(str + i, needle, n))
 }
 
-const char *u8_strrstr(const char *haystack, const char *needle)
+const char *u8_strrstr(const char *str, const char *needle)
 {
 	size_t n = u8_strlen(needle);
 
-	RSCANFUNC(u8_strneq(haystack + i, needle, n))
+	RSCANFUNC(u8_strneq(str + i, needle, n))
 }
 
-const char *u8_strstrI(const char *haystack, const char *needle)
+const char *u8_strstrI(const char *str, const char *needle)
 {
 	size_t n = u8_strlen(needle);
 
-	SCANFUNC(u8_strneqI(haystack + i, needle, n))
+	SCANFUNC(u8_strneqI(str + i, needle, n))
 }
 
-const char *u8_strrstrI(const char *haystack, const char *needle)
+const char *u8_strrstrI(const char *str, const char *needle)
 {
 	size_t n = u8_strlen(needle);
 
-	RSCANFUNC(u8_strneqI(haystack + i, needle, n))
+	RSCANFUNC(u8_strneqI(str + i, needle, n))
 }
 
 
@@ -218,33 +245,30 @@ bool u8_strneqI(const char *a, const char *b, size_t n)
 
 bool u8_isnorm(const char *str)
 {
-	uchar_t c;
-	size_t curlen;
-
-	while(str += (curlen = u8dec(str, &c)), c)
+	for (size_t i = 0; str[i];)
 	{
-		if(curlen != u8enc(c, NULL))
-			return false;
-		if(uchar_class(c) == UCLASS_UNASSIGNED)
+		uchar_t c;
+		size_t l = u8dec(str + i, &c);
+		i += l;
+
+		if(uchar_is(c, UCLASS_UNASSIGNED) || l != u8enc(c, NULL))
 			return false;
 	}
-
+	
 	return true;
 }
 
 bool u8_isvalid(const char *str)
 {
-	uchar_t c;
-	size_t curlen;
-
-	while(str += (curlen = u8dec(str, &c)), c)
+	for (size_t i = 0; str[i];)
 	{
-		if(curlen < u8enc(c, NULL))
-			return false;
-		if(uchar_class(c) == UCLASS_UNASSIGNED)
+		uchar_t c;
+		i += u8dec(str + i, &c);
+
+		if(uchar_is(c, UCLASS_UNASSIGNED))
 			return false;
 	}
-
+	
 	return true;
 }
 
