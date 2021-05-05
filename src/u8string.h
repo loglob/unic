@@ -39,6 +39,61 @@ size_t u8_strclen(const char *str, size_t lim)
 }
 
 
+size_t u8_strmap(const char *str, char *dst, uchar_t (*map_f)(uchar_t))
+{
+	size_t r = 0, w = 0;
+
+	while(str[r])
+	{
+		uchar_t c;
+		r += u8dec(str + r, &c);
+		c = map_f(c);
+		w += u8enc(c, dst ? dst + w : NULL);
+	}
+
+	if(dst)
+		dst[w] = 0;
+
+	return w + 1;
+}
+
+size_t u8_strnmap(const char *str, char *dst, size_t n, uchar_t (*map_f)(uchar_t))
+{
+	size_t r = 0, w = 0;
+
+	for (size_t i = 0; i < n && str[r]; i++)
+	{
+		uchar_t c;
+		r += u8dec(str + r, &c);
+		c = map_f(c);
+		w += u8enc(c, dst ? dst + w : NULL);
+	}
+
+	if(dst)
+		dst[w] = 0;
+
+	return w + 1;	
+}
+
+size_t u8_strcmap(const char *str, char *dst, size_t lim, uchar_t (*map_f)(uchar_t))
+{
+	size_t r = 0, w = 0;
+
+	while(r < lim && str[r])
+	{
+		uchar_t c;
+		r += u8ndec(str + r, lim - r, &c);
+		c = map_f(c);
+		w += u8enc(c, dst ? dst + w : NULL);
+	}
+
+	if(dst)
+		dst[w] = 0;
+
+	return w + 1;	
+}
+
+
 // used with the strmap functions
 static uchar_t uchar_id(uchar_t x)
 {
@@ -260,57 +315,6 @@ bool u8_isvalid(const char *str)
 	return true;
 }
 
-
-size_t u8_strmap(const char *str, char *dst, uchar_t (*map_f)(uchar_t))
-{
-	size_t r = 0, w = 0;
-
-	while(str[r])
-	{
-		uchar_t c;
-		r += u8dec(str + r, &c);
-		c = map_f(c);
-		w += u8enc(c, dst ? dst + w : NULL);
-	}
-
-	if(dst)
-		dst[w] = 0;
-
-	return w + 1;
-}
-
-size_t u8_strnmap(const char *str, char *dst, size_t n, uchar_t (*map_f)(uchar_t))
-{
-	size_t r = 0, w = 0;
-
-	for (size_t i = 0; i < n && str[r]; i++)
-	{
-		uchar_t c;
-		r += u8dec(str + r, &c);
-		c = map_f(c);
-		w += u8enc(c, dst ? dst + w : NULL);
-	}
-
-	if(dst)
-		dst[w] = 0;
-
-	return w + 1;	
-}
-
-size_t u8_strcmap(const char *str, char *dst, size_t lim, uchar_t (*map_f)(uchar_t))
-{
-	size_t r = 0, w = 0;
-
-	while(r < lim && str[r])
-	{
-		uchar_t c;
-		r += u8ndec(str + r, lim - r, &c);
-		c = map_f(c);
-		w += u8enc(c, dst ? dst + w : NULL);
-	}
-
-	if(dst)
-		dst[w] = 0;
-
-	return w + 1;	
-}
+#undef SCAN
+#undef SCANFUNC
+#undef RSCANFUNC
