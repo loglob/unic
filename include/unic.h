@@ -231,4 +231,188 @@ extern uchar_t uchar_upper(uchar_t c);
 
 #pragma endregion
 
+#pragma region u8string.h
+__nonnull((1))
+/** Determines the amount of unicode characters in the given utf-8 string
+ * @param str A utf-8 string. May not be NULL.
+ * @returns The amount of unicode characters in str.
+*/
+size_t u8_strlen(const char *str);
+
+/** Determines the amount of bytes occupied by the first n characters in the given utf-8 string.
+ * If the string contains fewer unicode characters, counts the entire string's length.
+ * Doesn't count the final NUL terminator.
+ * @param str A string. May be NULL only if n is 0.
+ * @param n The amount of unicode characters.
+ * @returns The amount of bytes taken up by the first n characters.
+*/
+size_t u8_strnlen(const char *str, size_t n);
+
+/** Determines the amount of unicode characters in the first c bytes of the given string.
+ * If the string is less than c bytes long, returns the amount of unicode characters in the entire string.
+ * @param str A string. May be NULL only is c is 0.
+ * @param c The amount of bytes.
+ * @returns The amount of unicode characters in the first c bytes.
+*/
+size_t u8_strclen(const char *str, size_t c);
+
+__nonnull((1))
+/** Copies the utf-8 encoded string str to dst.
+ * Every character written to dst is guaranteed to be utf-8 normalized.
+ * If dst is NULL, no write operations are performed but the correct byte amount is returned.
+ * @param str The utf-8 encoded source string. May not be NULL.
+ * @param dst The destination buffer. May be NULL to determine required buffer size.
+ * @returns The amount of bytes written to dst, including the NUL terminator. */
+size_t u8_strcpy(const char *str, char *dst);
+
+/** Copies at most n unicode characters from str to dst.
+ * Every character written to dst is guaranteed to be utf-8 normalized.
+ * If dst is NULL, no write operations are performed but the correct byte amount is returned.
+ * @param str The utf-8 encoded source string. May be NULL if n is NULL.
+ * @param dst The destination buffer. May be NULL to determine required buffer size.
+ * @param n The amount of unicode characters to copy.
+ * @returns The amount of bytes written to dst, including the NUL terminator. */
+size_t u8_strncpy(const char *str, char *dst, size_t n);
+
+/** Copies at most c bytes from str to dst.
+ * Every character written to dst is guaranteed to be utf-8 normalized.
+ * If dst is NULL, no write operations are performed but the correct byte amount is returned.
+ * @param str The utf-8 encoded source string. May be NULL if c is NULL.
+ * @param dst The destination buffer. May be NULL to determine required buffer size.
+ * @param c The maximum amount of bytes to copy (note that due to character reencoding this is NOT a limit on dst).  
+ * @returns The amount of bytes written to dst, including the NUL terminator. */
+size_t u8_strccpy(const char *str, char *dst, size_t c);
+
+__nonnull((1))
+/** Finds the position of the unicode character with the given index in the given utf-8 encoded string.
+ * The NUL terminator is considered to be inside the string bounds.
+ * @param str The utf-8 encoded string. May be NULL if pos is 0.
+ * @param pos The unicode character index.
+ * @returns A pointer to the start of the given unicode character,
+ *	or NULL if the index is outside the string bounds.
+*/
+const char *u8_strpos(const char *str, size_t pos);
+
+/** Finds the character at the given index in the given utf-8 encoded string.
+ * @param str The utf-8 encoded string. May be NULL is pos is 0.
+ * @param pos The unicode character index.
+ * @returns The character at that position,
+ *	or 0 if the index is outside the string bounds.
+*/
+uchar_t u8_strat(const char *str, size_t pos);
+
+__nonnull((1))
+/** Finds the first occurrence of the given character in the given utf-8 encoded string.
+ * Note that, for utf-8 normalized strings, strstr achieves the same and will be more efficient.
+ * 
+ * @param str The string. May not be NULL.
+ * @param chr The character to find.
+ * @returns A pointer to the start of the first occurrence of the given character,
+ *	or NULL if the string doesn't cotain the character.
+*/
+const char *u8_strchr(const char *str, uchar_t chr);
+
+__nonnull((1))
+/** Finds the first occurrence of the given character in the given utf-8 encoded string.
+ *
+ * @param str The string. May not be NULL.
+ * @param chr The character to find
+ * @returns A pointer to the start of the last occurrence of the given character,
+ *	or NULL is the string doesn't contain the character.
+*/
+const char *u8_strrchr(const char *str, uchar_t chr);
+
+__nonnull((1,2))
+/** Finds the first occurrence of the given substring in the given utf-8 encoded string.
+ * Note that, for utf-8 normalized strings, strstr achieves the same and will be more efficient.
+ * @param haystack The string to search in. May not be NULL.
+ * @param needle The string to search for. May not be NULL.
+ * @returns A pointer to the start of the first occurrence of the given substring,
+ *	or NULL if the string doesn't contain the substring. 
+*/
+const char *u8_strstr(const char *haystack, const char *needle);
+
+__nonnull((1,2))
+/** Finds the first occurrence of a case-insensitive variation of the given substring in the given string.
+ * @param haystack The string to search in. May not be NULL.
+ * @param needle The string to search for. May not be NULL.
+ * @returns A pointer to the start of the first occurrence of the given substring,
+ *	or NULL is the string doesn't contain a variation of the substring.
+*/
+const char *u8_strstrI(const char *haystack, const char *needle);
+
+__nonnull((1,2))
+/** Determines if two utf-8 encoded strings contain the same characters.
+ * Note that, for utf-8 normalized strings, strcmp achieves the same and is more efficient.
+ * @param a A string. May not be NULL.
+ * @param b Another string. May not be NULL.
+ * @returns a and b contain the same characters.
+*/
+bool u8_streq(const char *a, const char *b);
+
+__nonnull((1,2))
+/** Determines if two utf-8 encoded strings contain the same characters.
+ * Case-insensitive.
+ * @param a A string. May not be NULL.
+ * @param b Another string. May not be NULL.
+ * @returns a and b contain the same characters, ignoring case.
+*/
+bool u8_streqI(const char *a, const char *b);
+
+__nonnull((1))
+/** Determines if the given utf-8 encoded string is normalized utf-8.
+ * This means that the string is valid, and every character is encoded with its normal length.
+ * @param str A string. May not be NULL.
+ * @returns str is normalized utf-8.
+*/
+bool u8_isnorm(const char *str);
+
+__nonnull((1))
+/** Determines if the given utf-8 encoded string is valid utf-8.
+ * This means that the every character in the string is allocated in the unicode standard.
+ * Invalid encodings are allowed and are handled via normal fallbacks.
+ * @param str A string. May not be NULL.
+ * @returns str is valid utf-8.
+*/
+bool u8_isvalid(const char *str);
+
+__nonnull((1,3))
+/** Applies map_f to every character in the utf-8 encoded string and writes them to dst.
+ * If map_f returns 0, no character is written to dst. 
+ * Every character written to dst is guaranteed to be utf-8 normalized.
+ * If dst is NULL, no write operations are performed but the correct byte amount is returned.
+ * @param str The source string, may not be NULL.
+ * @param dst The destination buffer, may be NULL.
+ * @param map_f The function used to map characters, may not be NULL.
+ * @returns The amount of bytes written to dst, including the NUL terminator.
+*/
+size_t u8_strmap(const char *str, char *dst, uchar_t (*map_f)(uchar_t));
+
+__nonnull((4))
+/** Applies map_f to, at most, the first n character in the utf-8 encoded string and writes them to dst.
+ * If map_f returns 0, no character is written to dst.
+ * Every character written to dst is guaranteed to be utf-8 normalized.
+ * If dst is NULL, no write operations are performed but the correct byte amount is returned.
+ * @param str The source string, may be NULL if n is 0.
+ * @param dst The destination buffer, may be NULL.
+ * @param n The maximum amount of characters to read.
+ * @param map_f The function used to map characters, may not be NULL.
+ * @returns The amount of bytes written to dst, including the NUL terminator.
+*/
+size_t u8_strnmap(const char *str, char *dst, size_t n, uchar_t (*map_f)(uchar_t));
+
+__nonnull((4))
+/** Applies map_f to every character in the first c bytes of the utf-8 encoded string and writes them to buf.
+ * If map_f returns 0, no character is written to buf.
+ * Every character written to dst is guaranteed to be utf-8 normalized.
+ * If dst is NULL, no write operations are performed but the correct byte amount is returned.
+ * @param str The source string, may be NULL if c is 0.
+ * @param dst The destination buffer, may be NULL.
+ * @param c The maximum amount of bytes to read. Note that this is not a limit on output length.
+ * @param map_f The function used to map characters, may not be NULL.
+ * @returns The amount of bytes written to dst, including the NUL terminator.
+*/
+size_t u8_strcmap(const char *str, char *dst, size_t c, uchar_t (*map_f)(uchar_t));
+#pragma endregion
+
 #endif
