@@ -6,6 +6,10 @@
 
 enum unic_gc uchar_class(uchar_t c)
 {
+	// check for private use characters
+	if((c >= 0xE000 && c <= 0xF8FF) || (c >= 0xF0000 && c <= 0xFFFFD) || (c >= 0x100000 && c <= 0x10FFFD))
+		return UCLASS_PRIVATE_USE;
+
 	const struct ucdb_entry *e = ucdb_get(c);
 	return e ? e->class : UCLASS_UNASSIGNED;
 }
