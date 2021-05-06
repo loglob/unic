@@ -7,7 +7,7 @@ test: out/test
 
 out/test: test/test.c lib/libunic.so test/*.h
 	mkdir -p out
-	cc -L./lib/ -Wl,-rpath=./lib -Wall -Wextra -g $< -o $@ -lunic
+	cc -L./lib/ -Wl,-rpath=./lib -Wall -Wextra -g $< -o $@ -lunic -lexplain
 
 lib/libunic.so: out/unic.o
 	mkdir -p lib
