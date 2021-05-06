@@ -142,6 +142,9 @@ void test_utf8()
 	test_utf8_overencoding();
 	test_utf8_underencoding();
 
-	fclose(echo.read);
 	fclose(echo.write);
+	
+	eq_i(fgetu8(echo.read), UEOF);
+
+	fclose(echo.read);
 }
