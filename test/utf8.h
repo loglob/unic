@@ -1,4 +1,62 @@
 #include "common.h"
+#include <libexplain/pipe.h>
+#include <libexplain/fdopen.h>
+#include <libexplain/fwrite.h>
+#include <libexplain/fread.h>
+
+static struct {
+	int fds[2];
+	FILE *write;
+	FILE *read;
+} echo;
+
+void test_utf8_u8dec(const char *str, uchar_t chr, size_t len)
+{
+	uchar_t gotChr;
+	size_t gotLen = u8dec(str, &gotChr);
+
+	eq_i(gotChr, chr);
+	eq_i(gotLen, len);
+}
+
+void test_utf8_fgetu8(const char *str, uchar_t chr, size_t len)
+{
+	char z[4] = {};
+
+	explain_fwrite_or_die((void*)str, 1, len, echo.write);
+	// pad output to detect bad character length without deadlock
+	explain_fwrite_or_die(z, 1, 4 - len, echo.write);
+	fflush(echo.write);
+
+	uchar_t gotChr = fgetu8(echo.read);
+	
+	eq_i(gotChr, chr);
+
+	explain_fread_or_die(z, 1, 4 - len, echo.read);
+}
+
+void test_utf8_u8enc(uchar_t chr, const char *str, size_t len)
+{
+	char buf[5] = {};
+	size_t gotLen = u8enc(chr, buf);
+
+	eq_i(gotLen, len);
+	eq_s(buf, str);
+}
+
+void test_utf8_fputu8(uchar_t chr, const char *str, size_t len)
+{
+	char buf[5] = {};
+
+	fputu8(chr, echo.write);
+	fflush(echo.write);
+
+	size_t gotLen = explain_fread_or_die(buf, 1, len, echo.read);
+
+	eq_i(gotLen, len);
+	eq_s(buf, str);
+}
+
 
 void test_utf8_overencoding()
 {
@@ -39,25 +97,20 @@ void test_utf8_overencoding()
 		0x10348
 	};
 
-	// test overencoding
+	// test string overencoding
 	for (int i = 0; i < 4; i++)
 	{
 		for (int j = i; j < 4; j++)
 		{
-			uchar_t chr;
-			size_t len = u8dec(data[i][j], &chr);
-
-			eq_i(chr, codepoints[i]);
-			eq_i(len, j + 1);
+			test_utf8_u8dec(data[i][j], codepoints[i], j + 1);
+			test_utf8_fgetu8(data[i][j], codepoints[i], j + 1);
 		}
 
-		char buf[5] = {};
-		size_t len = u8enc(codepoints[i], buf);
-
-		eq_i(len, i + 1);
-		eq_s(buf, data[i][i]);
+		test_utf8_u8enc(codepoints[i], data[i][i], i + 1);
+		test_utf8_fputu8(codepoints[i], data[i][i], i + 1);
 	}
 }
+
 
 void test_utf8_underencoding()
 {
@@ -82,6 +135,13 @@ void test_utf8_underencoding()
 
 void test_utf8()
 {
+	explain_pipe_or_die(echo.fds);
+	echo.read = explain_fdopen_or_die(echo.fds[0], "r");
+	echo.write = explain_fdopen_or_die(echo.fds[1], "w");
+
 	test_utf8_overencoding();
 	test_utf8_underencoding();
+
+	fclose(echo.read);
+	fclose(echo.write);
 }
