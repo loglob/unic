@@ -157,10 +157,12 @@ extern uchar_t fgetu8(FILE *f);
 
 __nonnull((2))
 /** Writes the given unicode character to the given utf-8 encoded stream.
+ * Always writes either nothing on failure or an entire character on success.
  * @param c A unicode character
  * @param f A file stream. May not be NULL.
+ * @returns The amount of bytes written on success, or 0 on failure.
 */
-extern void fputu8(uchar_t c, FILE *f);
+extern size_t fputu8(uchar_t c, FILE *f);
 
 /** Like u8dec(), but reads the next utf-8 encoded character in the first n bytes of the given string.
  * If n is 0, behaves as if it read NUL terminator and returns 0.

@@ -175,11 +175,10 @@ uchar_t fgetu8(FILE *f)
 	return uc;
 }
 
-void fputu8(uchar_t c, FILE *f)
+size_t fputu8(uchar_t c, FILE *f)
 {
 	char buf[4];
 	size_t l = u8enc(c, buf);
 
-	for(size_t i = 0; i < l; i++)
-		fputc(buf[i], f);
+	return l * fwrite(buf, l, 1, f);
 }
