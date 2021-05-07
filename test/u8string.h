@@ -61,8 +61,8 @@ void test_u8string_strchr()
 
 	eq(u8_strchr(deLied, 0x00FC), deLied + 25);
 	eq(u8_strrchr(deLied, 0x00FC), deLied + 25);
-	eq(u8_strchr(deLied, 0x00DC), deLied + 37);
-	eq(u8_strrchr(deLied, 0x00DC), deLied + 37);
+	eq(u8_strchr(deLied, 0x00DC), deLied + 38);
+	eq(u8_strrchr(deLied, 0x00DC), deLied + 38);
 
 	eq(u8_strchrI(deLied, 0x00FC), u8_strchr(deLied, 0x00FC));
 	eq(u8_strrchrI(deLied, 0x00FC), u8_strchr(deLied, 0x00DC));

@@ -160,7 +160,7 @@ uchar_t u8_strat(const char *str, size_t pos)
 		uchar_t c; \
 		const size_t l = u8dec(str + i, &c); \
 		{ __VA_ARGS__ } \
-	i += l; \
+		i += l; \
 	} \
 }
 
@@ -168,7 +168,6 @@ uchar_t u8_strat(const char *str, size_t pos)
 		SCAN({\
 			if(cond) \
 				return str + i; \
-			i += l; \
 		}) \
 	return NULL; \
 }
@@ -178,7 +177,6 @@ uchar_t u8_strat(const char *str, size_t pos)
 		SCAN({\
 			if(cond) \
 				ret = str + i; \
-			i += l; \
 		}) \
 	return ret; \
 }
