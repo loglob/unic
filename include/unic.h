@@ -326,12 +326,22 @@ __nonnull((1))
  * @param str The string. May not be NULL.
  * @param chr The character to find.
  * @returns A pointer to the start of the first occurrence of the given character,
- *	or NULL if the string doesn't cotain the character.
+ *	or NULL if the string doesn't contain the character.
 */
 extern const char *u8_strchr(const char *str, uchar_t chr);
 
 __nonnull((1))
-/** Finds the first occurrence of the given character in the given utf-8 encoded string.
+/** Finds the first occurrence of the given character, or a case-insensitive variant of it, in the given utf-8 encoded string.
+ * see uchar_alike() for specifics on case-insensitivity.
+ * @param str The string. May not be NULL.
+ * @param chr The character to find.
+ * @returns A pointer to the start of the first occurrence of the given character or a case-insensitive variant of it,
+ *	or NULL if the string doesn't cotain the character.
+*/
+extern const char *u8_strchrI(const char *str, uchar_t chr);
+
+__nonnull((1))
+/** Finds the last occurrence of the given character in the given utf-8 encoded string.
  *
  * @param str The string. May not be NULL.
  * @param chr The character to find
@@ -339,6 +349,16 @@ __nonnull((1))
  *	or NULL is the string doesn't contain the character.
 */
 extern const char *u8_strrchr(const char *str, uchar_t chr);
+
+__nonnull((1))
+/** Finds the last occurrence of the given character, or a case-insensitive variant of it, in the given utf-8 encoded string.
+ * see uchar_alike() for specifics on case-insensitivity.
+ * @param str The string. May not be NULL.
+ * @param chr The character to find
+ * @returns A pointer to the start of the last occurrence of the given character,
+ *	or NULL is the string doesn't contain the character.
+*/
+extern const char *u8_strrchrI(const char *str, uchar_t chr);
 
 __nonnull((1,2))
 /** Finds the first occurrence of the given substring in the given utf-8 encoded string.
