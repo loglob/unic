@@ -37,7 +37,14 @@ bool uchar_alike(uchar_t a, uchar_t b)
 bool uclass_is(enum unic_gc general, enum unic_gc specific)
 {
 	return general == specific
-		|| ((general & ((1 << UNIC_GC_SUB_BITS) - 1)) == 0 && (general >> UNIC_GC_SUB_BITS == specific >> UNIC_GC_SUB_BITS));
+		|| (general == UCLASS_CASED_LETTER && (
+			specific == UCLASS_UPPERCASE_LETTER
+			|| specific == UCLASS_LOWERCASE_LETTER
+			|| specific == UCLASS_TITLECASE_LETTER
+		))
+		|| ((general & ((1 << UNIC_GC_SUB_BITS) - 1)) == 0 && (
+			general >> UNIC_GC_SUB_BITS == specific >> UNIC_GC_SUB_BITS
+		));
 }
 
 bool uchar_is(uchar_t chr, enum unic_gc class)
