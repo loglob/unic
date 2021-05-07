@@ -106,7 +106,6 @@ void test_utf8_overencoding()
 	}
 }
 
-
 void test_utf8_underencoding()
 {
 	char *data[] = {
@@ -125,6 +124,23 @@ void test_utf8_underencoding()
 			size_t l = u8dec(&data[i][j], NULL);
 			eq_i(l, 1);
 		}
+	}
+
+	for (size_t n = 0; n <= 4; n++)
+	{
+		// 4-byte encoded \0
+		const char *d = "\xF0\x80\x80\x80";
+
+		uchar_t chr;
+		size_t len = u8ndec(d, n, &chr);
+
+		if(n == 4)
+		{
+			eq_i(chr, 0);
+			eq_i(len, 4);
+		}
+		else
+			eq_i(len, 1);
 	}
 }
 
