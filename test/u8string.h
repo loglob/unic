@@ -52,6 +52,21 @@ void test_u8string_strat()
 	eq_i(u8_strat(mul_apin, 3), mul_apin_chrs[2]);
 }
 
+void test_u8string_strchr()
+{
+	eq_i(u8_strchr(deLied, 't'), strchr(deLied, 't'));
+	eq_i(u8_strrchr(deLied, 't'), strrchr(deLied, 't'));
+
+	eq_i(u8_strchr(deLied, 0x00FC), deLied + 25);
+	eq_i(u8_strrchr(deLied, 0x00FC), deLied + 25);
+
+	eq_i(u8_strchrI(deLied, 0x00FC), u8_strchr(deLied, 0x00FC));
+	eq_i(u8_strrchrI(deLied, 0x00FC), deLied + 37);
+
+	eq_i(u8_strchrI(deLied, 0x00DC), u8_strchrI(deLied, 0x00FC));
+	eq_i(u8_strrchrI(deLied, 0x00DC), u8_strrchrI(deLied, 0x00FC));
+}
+
 void test_u8string()
 {
 	test_u8string_emptyCopies();
