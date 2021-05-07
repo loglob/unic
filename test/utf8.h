@@ -21,18 +21,12 @@ void test_utf8_u8dec(const char *str, uchar_t chr, size_t len)
 
 void test_utf8_fgetu8(const char *str, uchar_t chr, size_t len)
 {
-	char z[4] = {};
-
 	explain_fwrite_or_die((void*)str, 1, len, echo.write);
-	// pad output to detect bad character length without deadlock
-	explain_fwrite_or_die(z, 1, 4 - len, echo.write);
 	fflush(echo.write);
 
 	uchar_t gotChr = fgetu8(echo.read);
 	
 	eq_i(gotChr, chr);
-
-	explain_fread_or_die(z, 1, 4 - len, echo.read);
 }
 
 void test_utf8_u8enc(uchar_t chr, const char *str, size_t len)
@@ -48,11 +42,12 @@ void test_utf8_fputu8(uchar_t chr, const char *str, size_t len)
 {
 	char buf[5] = {};
 
-	fputu8(chr, echo.write);
+	size_t gotLen = fputu8(chr, echo.write);
 	fflush(echo.write);
 
-	size_t gotLen = explain_fread_or_die(buf, 1, len, echo.read);
+	size_t gotAnything = explain_fread_or_die(buf, len, 1, echo.read);
 
+	eq_i(gotAnything, true);
 	eq_i(gotLen, len);
 	eq_s(buf, str);
 }
@@ -143,7 +138,7 @@ void test_utf8()
 	test_utf8_underencoding();
 
 	fclose(echo.write);
-	
+
 	eq_i(fgetu8(echo.read), UEOF);
 
 	fclose(echo.read);
