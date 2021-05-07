@@ -122,7 +122,7 @@ const char *u8_strpos(const char *str, size_t pos)
 	size_t i;
 
 	for (i = 0; i < pos && str[r]; i++)
-		r += u8dec(str + i, NULL);
+		r += u8dec(str + r, NULL);
 	
 	if(i < pos)
 		return NULL;
