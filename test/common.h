@@ -21,8 +21,12 @@ static void _eq_s(const char *got, const char *want, const char *got_expr, const
 	}
 }
 
-
 #define _eq(s, ...) _eq##s (__VA_ARGS__)
 
 #define eq_i(got, want) _eq(_i, (got), (want), #got, #want, __FILE__, __LINE__, __func__)
 #define eq_s(got, want) _eq(_s, (got), (want), #got, #want, __FILE__, __LINE__, __func__)
+
+const char mul_apin[] = "\xF0\x92\x80\xAF" "\xF0\x92\x80\xB3";
+const char deLied[] =
+	"Deutschland, Deutschland " "\xC3\xBC" "ber alles,\n"
+	"\xC3\x9C" "ber alles in der Welt";

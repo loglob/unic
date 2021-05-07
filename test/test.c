@@ -1,11 +1,13 @@
 #include "utf8.h"
-
-char mul_apin[] = "\xF0\x92\x80\xAF" "\xF0\x92\x80\xB3";
-char ueber[] = "Deutschland, Deutschland " "\xC3\xBC" "ber alles; " "\xC3\x0c" "ber alles in der Welt";
-
+#include "u8string.h"
 
 int main(void)
 {
-	test_utf8();
+	#define TEST(m) puts("Testing " #m ".h..."); test_##m ()
+
+	TEST(utf8);
+	TEST(u8string);
 	printf("Completed all tests!\n");
+	
+	#undef TEST
 }
