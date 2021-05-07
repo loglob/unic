@@ -33831,7 +33831,7 @@ static const struct ucdb_entry *ucdb_get(uchar_t u)
 	if(u > UNIC_MAX)
 		return NULL;
 
-	size_t l = UCDB_DIRECT_MAX + 1, r = UNIC_MAX - 1;
+	size_t l = UCDB_DIRECT_MAX + 1, r = UCDB_COUNT - 1;
 
 	while(l <= r)
 	{
