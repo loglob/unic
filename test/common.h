@@ -21,12 +21,36 @@ static void _eq_s(const char *got, const char *want, const char *got_expr, const
 	}
 }
 
+static void _pr_relp(const char *p, const char *base, const char *base_expr)
+{
+	if(p == NULL || p < base - 0x100 || p > base + strlen(base) + 0x100)
+		fprintf(stderr, "%p", p);
+	else if(p < base || p > base + strlen(base))
+		fprintf(stderr, "%s%+zd", base_expr, p - base);
+	else
+		fprintf(stderr, "%s%+zd(%s)", base_expr, p - base, p);
+}
+
+static void _eq_p(const char *got, const char *want, const char *base, const char *got_expr, const char *want_expr, const char *base_expr, const char *file, long line, const char *func)
+{
+	if(got != want)
+	{
+		fprintf(stderr, "test: %s: %lu: %s: Assertion `%s == %s` failed; Got ", file, line, func, got_expr, want_expr);
+		_pr_relp(got, base, base_expr);
+		fprintf(stderr, ", expected ");
+		_pr_relp(want, base, base_expr);
+		fputc('\n', stderr);
+
+		exit(EXIT_FAILURE);
+	}
+}
+
 #define _eq(s, ...) _eq##s (__VA_ARGS__)
 
 #define eq_i(got, want) _eq(_i, (long)(got), (long)(want), #got, #want, __FILE__, __LINE__, __func__)
+#define eq_p(got, want, base) _eq(_p, (got), (want), (base), #got, #want, #base, __FILE__, __LINE__, __func__)
 #define eq_s(got, want) _eq(_s, (got), (want), #got, #want, __FILE__, __LINE__, __func__)
 
 const char mul_apin[] = "\xF0\x92\x80\xAF" "\xF0\x92\x80\xB3";
 const char deLied[] =
-	"Deutschland, Deutschland " "\xC3\xBC" "ber alles,\n"
-	"\xC3\x9C" "ber alles in der Welt";
+	"Deutschland, Deutschland " "\xC3\xBC" "ber alles; " "\xC3\x9C" "ber alles in der Welt";
