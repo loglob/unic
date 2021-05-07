@@ -32,10 +32,10 @@ void test_u8string_lenths()
 
 void test_u8string_strpos()
 {
-	eq_i(u8_strpos(mul_apin, 0), mul_apin);
-	eq_i(u8_strpos(mul_apin, 1), mul_apin + 4);
-	eq_i(u8_strpos(mul_apin, 2), mul_apin + 8);
-	eq_i(u8_strpos(mul_apin, 3), NULL);
+	eq_p(u8_strpos(mul_apin, 0), mul_apin, mul_apin);
+	eq_p(u8_strpos(mul_apin, 1), mul_apin + 4, mul_apin);
+	eq_p(u8_strpos(mul_apin, 2), mul_apin + 8, mul_apin);
+	eq_p(u8_strpos(mul_apin, 3), NULL, mul_apin);
 }
 
 void test_u8string_strat()
@@ -54,17 +54,39 @@ void test_u8string_strat()
 
 void test_u8string_strchr()
 {
-	eq_i(u8_strchr(deLied, 't'), strchr(deLied, 't'));
-	eq_i(u8_strrchr(deLied, 't'), strrchr(deLied, 't'));
+	#define eq(a,b) eq_p(a,b,deLied)
 
-	eq_i(u8_strchr(deLied, 0x00FC), deLied + 25);
-	eq_i(u8_strrchr(deLied, 0x00FC), deLied + 25);
+	eq(u8_strchr(deLied, 't'), strchr(deLied, 't'));
+	eq(u8_strrchr(deLied, 't'), strrchr(deLied, 't'));
 
-	eq_i(u8_strchrI(deLied, 0x00FC), u8_strchr(deLied, 0x00FC));
-	eq_i(u8_strrchrI(deLied, 0x00FC), deLied + 37);
+	eq(u8_strchr(deLied, 0x00FC), deLied + 25);
+	eq(u8_strrchr(deLied, 0x00FC), deLied + 25);
+	eq(u8_strchr(deLied, 0x00DC), deLied + 37);
+	eq(u8_strrchr(deLied, 0x00DC), deLied + 37);
 
-	eq_i(u8_strchrI(deLied, 0x00DC), u8_strchrI(deLied, 0x00FC));
-	eq_i(u8_strrchrI(deLied, 0x00DC), u8_strrchrI(deLied, 0x00FC));
+	eq(u8_strchrI(deLied, 0x00FC), u8_strchr(deLied, 0x00FC));
+	eq(u8_strrchrI(deLied, 0x00FC), u8_strchr(deLied, 0x00DC));
+
+	eq(u8_strchrI(deLied, 0x00DC), u8_strchrI(deLied, 0x00FC));
+	eq(u8_strrchrI(deLied, 0x00DC), u8_strrchrI(deLied, 0x00FC));
+
+	#undef eq
+}
+
+void test_u8string_strstr()
+{
+	#define eq(a,b) eq_p(a,b,deLied)
+
+	eq(u8_strstr(deLied, "über"), u8_strchr(deLied, 0x00FC));
+	eq(u8_strrstr(deLied, "über"), u8_strchr(deLied, 0x00FC));
+
+	eq(u8_strstr(deLied, "Über"), u8_strchr(deLied, 0x00DC));
+	eq(u8_strrstr(deLied, "Über"), u8_strchr(deLied, 0x00DC));
+
+	eq(u8_strstrI(deLied, "über"), u8_strstr(deLied, "über"));
+	eq(u8_strrstrI(deLied, "über"), u8_strstr(deLied, "Über"));
+
+	#undef eq
 }
 
 void test_u8string()
@@ -72,4 +94,7 @@ void test_u8string()
 	test_u8string_emptyCopies();
 	test_u8string_lenths();
 	test_u8string_strpos();
+	test_u8string_strat();
+	test_u8string_strchr();
+	test_u8string_strstr();
 }
