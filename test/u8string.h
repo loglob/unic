@@ -38,6 +38,20 @@ void test_u8string_strpos()
 	eq_i(u8_strpos(mul_apin, 3), NULL);
 }
 
+void test_u8string_strat()
+{
+	uchar_t mul_apin_chrs[3];
+
+	u8dec(mul_apin, mul_apin_chrs + 0);
+	u8dec(mul_apin + 4, mul_apin_chrs + 1);
+	u8dec(mul_apin + 8, mul_apin_chrs + 2);
+
+	eq_i(u8_strat(mul_apin, 0), mul_apin_chrs[0]);
+	eq_i(u8_strat(mul_apin, 1), mul_apin_chrs[1]);
+	eq_i(u8_strat(mul_apin, 2), mul_apin_chrs[2]);
+	eq_i(u8_strat(mul_apin, 3), mul_apin_chrs[2]);
+}
+
 void test_u8string()
 {
 	test_u8string_emptyCopies();
