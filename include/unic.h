@@ -15,6 +15,10 @@
 #define UNIC_BIT 21
 /* Type-correct EOF for unicode functions */
 #define UEOF ((uchar_t)-1)
+/* Overencoded NUL terminator to include \0 in utf-8 encoded strings */
+#define UNUL "\xC0\x80"
+/* The maximum amount of bytes any UTF-8 encoded character can take up */
+#define UTF8_MAX 4
 
 /* A single unicode character */
 typedef uint32_t uchar_t;

@@ -292,6 +292,8 @@ bool u8_isnorm(const char *str)
 		size_t l = u8dec(str + i, &c);
 		i += l;
 
+		if(c == 0 && l == 2)
+			continue;
 		if(uchar_is(c, UCLASS_UNASSIGNED) || l != u8enc(c, NULL))
 			return false;
 	}
