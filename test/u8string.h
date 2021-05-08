@@ -89,16 +89,23 @@ void test_u8string_strstr()
 	#undef eq
 }
 
-void test_utf8_isnorm()
+void test_u8string_isnorm()
 {
 	const char *properNUL = "foo" UNUL "bar";
 	const char *improperNUL = "foo" "\xE0\x80\x80" "bar";
 	
 	assert(u8_isnorm(deLied));
+	assert(u8_isvalid(deLied));
 	assert(u8_isnorm(mul_apin));
+	assert(u8_isvalid(mul_apin));
 	assert(u8_isnorm(properNUL));
+	assert(u8_isvalid(properNUL));
 	assert(!u8_isnorm(improperNUL));
+	assert(u8_isvalid(improperNUL));
 
+	const char *invalid = "foo" "\xF7\xBF\xBF\xBF" "bar";
+	assert(!u8_isnorm(invalid));
+	assert(!u8_isvalid(invalid));
 }
 
 void test_u8string()
@@ -109,4 +116,5 @@ void test_u8string()
 	test_u8string_strat();
 	test_u8string_strchr();
 	test_u8string_strstr();
+	test_u8string_isnorm();
 }
