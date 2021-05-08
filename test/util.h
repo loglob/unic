@@ -40,9 +40,39 @@ void test_util_uclass_is()
 	assert(!uclass_is(UCLASS_CURRENCY_SYMBOL, UCLASS_CLOSE_PUNCTUATION));		
 }
 
+void test_util_uchar_upper()
+{
+	uchar_t data[][2] = {
+		{ '5', '5' },
+		{ 'i', 'I' },
+		{ 0x0131 /*ı*/, 'I' },
+		{ 0x00FC /*ü*/, 0x00DC /*Ü*/ },
+		{ 0x20AC /*€*/, 0x20AC /*€*/ }
+	};
+
+	for (size_t i = 0; i < sizeof(data)/sizeof(*data); i++)
+		eq_i(uchar_upper(data[i][0]), data[i][1]);
+}
+
+void test_util_uchar_lower()
+{
+	uchar_t data[][2] = {
+		{ '5', '5' },
+		{ 'I', 'i' },
+		{ 0x0130 /*İ*/, 'i' },
+		{ 0x00DC /*Ü*/, 0x00FC /*ü*/ },
+		{ 0x20AC /*€*/, 0x20AC /*€*/ }
+	};
+
+	for (size_t i = 0; i < sizeof(data)/sizeof(*data); i++)
+		eq_i(uchar_lower(data[i][0]), data[i][1]);
+}
+
 void test_util()
 {
 	test_util_private_use_planes();
 	test_util_uchar_class();
 	test_util_uclass_is();
+	test_util_uchar_lower();
+	test_util_uchar_upper();
 }
