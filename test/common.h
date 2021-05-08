@@ -1,6 +1,7 @@
 #pragma once
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "../include/unic.h"
 
 static void _eq_i(long got, long want, const char *got_expr, const char *want_expr, const char *file, long line, const char *func)

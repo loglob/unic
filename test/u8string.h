@@ -89,6 +89,18 @@ void test_u8string_strstr()
 	#undef eq
 }
 
+void test_utf8_isnorm()
+{
+	const char *properNUL = "foo" UNUL "bar";
+	const char *improperNUL = "foo" "\xE0\x80\x80" "bar";
+	
+	assert(u8_isnorm(deLied));
+	assert(u8_isnorm(mul_apin));
+	assert(u8_isnorm(properNUL));
+	assert(!u8_isnorm(improperNUL));
+
+}
+
 void test_u8string()
 {
 	test_u8string_emptyCopies();
