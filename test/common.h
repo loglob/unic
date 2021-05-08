@@ -7,7 +7,8 @@ static void _eq_i(long got, long want, const char *got_expr, const char *want_ex
 {
 	if(got != want)
 	{
-		fprintf(stderr, "test: %s: %lu: %s: Assertion `%s == %s` failed; Got %lu, expected %lu\n", file, line, func, got_expr, want_expr, got, want);
+		fprintf(stderr, "test: %s: %lu: %s: Assertion `%s == %s` failed; Got %lu(x%lx), expected %lu(x%lx)\n",
+							file, line, func,	got_expr, want_expr,		got, got,			want, want);
 		exit(EXIT_FAILURE);
 	}
 }
