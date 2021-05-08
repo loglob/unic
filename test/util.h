@@ -29,8 +29,15 @@ void test_util_uchar_class()
 void test_util_uclass_is()
 {
 	assert(uclass_is(UCLASS_LETTER, UCLASS_CASED_LETTER));
+	assert(uclass_is(UCLASS_LETTER, UCLASS_UPPERCASE_LETTER));
+	assert(!uclass_is(UCLASS_LETTER, UCLASS_CURRENCY_SYMBOL));
+
 	assert(uclass_is(UCLASS_CASED_LETTER, UCLASS_UPPERCASE_LETTER));
-	
+	assert(!uclass_is(UCLASS_CASED_LETTER, UCLASS_CURRENCY_SYMBOL));
+	assert(!uclass_is(UCLASS_CASED_LETTER, UCLASS_OTHER_LETTER));
+
+	assert(uclass_is(UCLASS_CURRENCY_SYMBOL, UCLASS_CURRENCY_SYMBOL));
+	assert(!uclass_is(UCLASS_CURRENCY_SYMBOL, UCLASS_CLOSE_PUNCTUATION));		
 }
 
 void test_util()
