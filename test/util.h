@@ -68,6 +68,27 @@ void test_util_uchar_lower()
 		eq_i(uchar_lower(data[i][0]), data[i][1]);
 }
 
+void test_util_uchar_alike()
+{
+	uchar_t data[][2] = {
+		{ '1', '1' },
+		{ 'a', 'a' },
+		{ 'a', 'A' },
+		{ 0x0130 /*İ*/, 'i' },
+		{ 0x0130 /*İ*/, 'I' },
+		{ 0x0131 /*ı*/, 'i' },
+		{ 0x0131 /*ı*/, 'I' },
+		{ 0x00DC /*Ü*/, 0x00FC /*ü*/ },
+		{ 0x20AC /*€*/, 0x20AC /*€*/ },
+	};
+
+	for (size_t i = 0; i < sizeof(data)/sizeof(*data); i++)
+	{
+		assert(uchar_alike(data[i][0], data[i][1]));
+		assert(uchar_alike(data[i][1], data[i][0]));
+	}
+}
+
 void test_util()
 {
 	test_util_private_use_planes();
@@ -75,4 +96,5 @@ void test_util()
 	test_util_uclass_is();
 	test_util_uchar_lower();
 	test_util_uchar_upper();
+	test_util_uchar_alike();
 }
