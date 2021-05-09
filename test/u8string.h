@@ -108,6 +108,25 @@ void test_u8string_isnorm()
 	assert(!u8_isvalid(invalid));
 }
 
+void test_u8string_streq()
+{
+	assert(u8_streq(deLied, deLied));
+	assert(u8_streq(mul_apin, mul_apin));
+	assert(!u8_streq(deLied, mul_apin));
+	assert(!u8_streq(mul_apin, deLied));
+
+	const char *normal = "foo" UNUL "bar";
+	const char *overenc = "\xC1\xA6" "oo" UNUL "bar";
+
+	
+	assert(u8_streq(normal, overenc));
+	assert(u8_streq(overenc, normal));
+	assert(!u8_streq(normal, "foo"));
+	assert(!u8_streq(overenc, "foo"));
+	assert(!u8_streq(normal, "foobar"));
+	assert(!u8_streq(overenc, "foobar"));
+}
+
 void test_u8string()
 {
 	test_u8string_emptyCopies();
@@ -117,4 +136,5 @@ void test_u8string()
 	test_u8string_strchr();
 	test_u8string_strstr();
 	test_u8string_isnorm();
+	test_u8string_streq();
 }
