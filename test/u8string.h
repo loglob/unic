@@ -125,6 +125,11 @@ void test_u8string_streq()
 	assert(!u8_streq(overenc, "foo"));
 	assert(!u8_streq(normal, "foobar"));
 	assert(!u8_streq(overenc, "foobar"));
+
+	assert(u8_strneq("foo", normal, 3));
+	assert(u8_strneq(normal, "foo", 3));
+	assert(!u8_strneq("foo", normal, 4));
+	assert(!u8_strneq(normal, "foo", 4));
 }
 
 void test_u8string()
