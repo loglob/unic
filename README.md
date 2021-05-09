@@ -1,10 +1,15 @@
 # unic
 A unicode library for C. Supports unicode general categories, simple case mappings and utf-8.
-When compiled into a binary, the embedded unicode character database takes up about 321 KiB.
 
-## how to build
-Running ```make precompile``` will precompile the headers to speed up compile time when including them (this only works with gcc).
+## building
+Run `make` to build the library binary to `out/libunic.so`.
 
-Running ```make install``` will copy the headers into */usr/include*, allowing you to import them with ```#include <unic/*.h>```.
+## installing
+Run `make install` to build the library and copy it to `/usr/lib/` as well as copying a header to `/usr/include`.
 
-The created files can be removed by running ```make uninstall```.
+## linking and using
+Compile with `-lunic` and `#include <unic.h>` to use the library.
+
+If you want to statically link unic without installing it, you can use the `out/unic.o` object.
+
+Run `make doc` to generate documentation to `doc`
