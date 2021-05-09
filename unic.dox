@@ -1,4 +1,4 @@
-
+PROJECT_NAME           = "Unic"
 PROJECT_BRIEF          = "A C unicode library"
 INPUT                  = ./include/unic.h
 OUTPUT_DIRECTORY       = doc
@@ -8,3 +8,4 @@ MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 PREDEFINED             = __nonnull(x)=
 EXTRACT_ALL            = YES
+STRIP_FROM_PATH        = ./include/

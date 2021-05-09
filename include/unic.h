@@ -5,27 +5,27 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-/* The unicode version used to generate the library */
+/** The unicode version used to generate the library */
 #define UNIC_VERSION 1300
-/* The unicode version as a human readable string */
+/** The unicode version as a human readable string */
 #define UNIC_VERSION_STRING "13.0.0"
-/* The highest valid unicode character */
+/** The highest valid unicode character */
 #define UNIC_MAX 0x10FFFD
-/* The amount of bits needed to encode every valid unicode character */
+/** The amount of bits needed to encode every valid unicode character */
 #define UNIC_BIT 21
-/* Type-correct EOF for unicode functions */
+/** Type-correct EOF for unicode functions */
 #define UEOF ((uchar_t)-1)
-/* Overencoded NUL terminator to include \0 in utf-8 encoded strings */
+/** Overencoded NUL terminator to include \0 in utf-8 encoded strings */
 #define UNUL "\xC0\x80"
-/* The maximum amount of bytes any UTF-8 encoded character can take up */
+/** The maximum amount of bytes any UTF-8 encoded character can take up */
 #define UTF8_MAX 4
 
-/* A single unicode character */
+/** A single unicode character */
 typedef uint32_t uchar_t;
 
-/* The amount of bits taken up by an enum unic_gc value */
+/** The amount of bits taken up by an enum unic_gc value */
 #define UNIC_GC_BITS 6
-/* The amount of bits taken up by the minor category of an enum unic_gc value */
+/** The amount of bits taken up by the minor category of an enum unic_gc value */
 #define UNIC_GC_SUB_BITS 3
 
 /* A unicode general category */
