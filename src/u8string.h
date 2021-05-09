@@ -222,67 +222,27 @@ const char *u8_strrstrI(const char *str, const char *needle)
 	RSCANFUNC(u8_strneqI(str + i, needle, n))
 }
 
+#define BISCAN(loopcond, failcond) { \
+	uchar_t ac, bc; \
+	for(size_t i = 0; loopcond && (*a || *b); i++) {\
+	size_t la = u8dec(a, &ac), lb = u8dec(b, &bc); \
+	if(!*a || !*b || failcond) return false; \
+	a += la; b += lb; \
+} \
+	return true; \
+}
 
 bool u8_streq(const char *a, const char *b)
-{
-	uchar_t ac, bc;
-
-	while(a += u8dec(a, &ac), b += u8dec(b, &bc), ac == bc)
-	{
-		if(!*a)
-			return true;
-	}
-
-	return false;
-}
+	BISCAN(true, ac != bc)
 
 bool u8_strneq(const char *a, const char *b, size_t n)
-{
-	uchar_t ac, bc;
-	size_t i = 0;
-
-	if(n == 0)
-		return true;
-
-	while(a += u8dec(a, &ac), b += u8dec(b, &bc), ac == bc)
-	{
-		if(++i >= n || !ac)
-			return true;
-	}
-
-	return false;
-}
+	BISCAN(i < n, ac != bc)
 
 bool u8_streqI(const char *a, const char *b)
-{
-	uchar_t ac, bc;
-
-	while(a += u8dec(a, &ac), b += u8dec(b, &bc), uchar_alike(ac, bc))
-	{
-		if(!ac)
-			return true;
-	}
-
-	return false;
-}
+	BISCAN(true, !uchar_alike(ac, bc))
 
 bool u8_strneqI(const char *a, const char *b, size_t n)
-{
-	uchar_t ac, bc;
-	size_t i = 0;
-
-	if(n == 0)
-		return true;
-
-	while(a += u8dec(a, &ac), b += u8dec(b, &bc), uchar_alike(ac, bc))
-	{
-		if(++i >= n || !ac)
-			return true;
-	}
-
-	return false;
-}
-
+	BISCAN(i < n, !uchar_alike(ac, bc))
 
 bool u8_isnorm(const char *str)
 {
@@ -318,3 +278,4 @@ bool u8_isvalid(const char *str)
 #undef SCAN
 #undef SCANFUNC
 #undef RSCANFUNC
+#undef BISCAN
