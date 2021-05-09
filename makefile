@@ -1,32 +1,35 @@
+CC=cc -Wall -Wextra
+
 .PHONY: test unic install uninstall
 
-unic: lib/libunic.so
+out/libunic.so: out/unic.o
+	cc -Wall -Wextra -shared $< -o $@
 
 test: out/test
 	./$<
 
 out/test: test/test.c out/debug.o test/*.h
 	mkdir -p out
-	cc -Wall -Wextra -g $< out/debug.o -o $@ -lexplain
-
-lib/libunic.so: out/unic.o
-	mkdir -p lib
-	cc -shared $< -o $@
+	$(CC) -g $< out/debug.o -o $@ -lexplain
 
 out/unic.o: src/unic.c src/*.h include/unic.h
 	mkdir -p out
-	cc -fpic -Ofast -Wall -Wextra -c $< -o $@
+	$(CC) -fpic -O3 -c $< -o $@
 
 out/debug.o: src/unic.c src/*.h include/unic.h
 	mkdir -p out
-	cc -g -Wall -Wextra -c $< -o $@
+	$(CC) -g -c $< -o $@
 
-install: lib/libunic.so
+doc: unic.dox include/unic.h
+	mkdir -p doc
+	doxygen $<
+
+install: out/libunic.so
 	cp $< /usr/lib/
-	cp include/unic.h /usr/include
+	cp include/unic.h /usr/include/
 
 uninstall:
 	rm -f /usr/lib/libunic.so /usr/include/unic.h
 
 clean:
-	rm -fr lib out
+	rm -fr out doc

@@ -1,0 +1,10 @@
+
+PROJECT_BRIEF          = "A C unicode library"
+INPUT                  = ./include/unic.h
+OUTPUT_DIRECTORY       = doc
+OPTIMIZE_OUTPUT_FOR_C  = YES
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = __nonnull(x)=
+EXTRACT_ALL            = YES
