@@ -229,7 +229,7 @@ bool u8_streq(const char *a, const char *b)
 
 	while(a += u8dec(a, &ac), b += u8dec(b, &bc), ac == bc)
 	{
-		if(!ac)
+		if(!*a)
 			return true;
 	}
 
