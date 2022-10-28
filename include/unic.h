@@ -6,9 +6,9 @@
 #include <stdio.h>
 
 /** The unicode version used to generate the library */
-#define UNIC_VERSION 1300
+#define UNIC_VERSION 1500
 /** The unicode version as a human readable string */
-#define UNIC_VERSION_STRING "13.0.0"
+#define UNIC_VERSION_STRING "15.0.0"
 /** The highest valid unicode character */
 #define UNIC_MAX 0x10FFFD
 /** The amount of bits needed to encode every valid unicode character */
@@ -180,7 +180,7 @@ extern size_t u8ndec(const char *str, size_t n, uchar_t *c);
 __nonnull((1))
 /** Reads the next utf-8 encoded character from the given string.
  * Note that reading and re-encoding a character may change its length due to improper encoding in source streams.
- * A well-encoded NUL terminater is treated as a character of length 1. 
+ * A well-encoded NUL terminater is treated as a character of length 1.
  * @param str The utf-8 encoded buffer to read from. May not be NULL.
  * @param c The location to store the character in. May be NULL to only determine the length of the next character.
  * @returns The amount of bytes read. */
@@ -230,7 +230,7 @@ extern bool uchar_is(uchar_t chr, enum unic_gc class);
 /** Determines if the given unicode character is whitespace
  * @param c The character
  * @returns c is in the SEPARATOR general category,
- *	or an ascii control character that is considered whitespace, as per libc's isspace() 
+ *	or an ascii control character that is considered whitespace, as per libc's isspace()
 */
 extern int u_isspace(uchar_t c);
 
@@ -300,7 +300,7 @@ extern size_t u8_strncpy(const char *str, char *dst, size_t n);
  * If dst is NULL, no write operations are performed but the correct byte amount is returned.
  * @param str The utf-8 encoded source string. May be NULL if c is 0.
  * @param dst The destination buffer. May be NULL to determine required buffer size.
- * @param c The maximum amount of bytes to copy (note that due to character reencoding this is NOT a limit on dst).  
+ * @param c The maximum amount of bytes to copy (note that due to character reencoding this is NOT a limit on dst).
  * @returns The amount of bytes written to dst, including the NUL terminator.
 */
 extern size_t u8_strccpy(const char *str, char *dst, size_t c);
@@ -326,7 +326,7 @@ extern uchar_t u8_strat(const char *str, size_t pos);
 __nonnull((1))
 /** Finds the first occurrence of the given character in the given utf-8 encoded string.
  * Note that, for utf-8 normalized strings, strstr achieves the same and will be more efficient.
- * 
+ *
  * @param str The string. May not be NULL.
  * @param chr The character to find.
  * @returns A pointer to the start of the first occurrence of the given character,
@@ -370,7 +370,7 @@ __nonnull((1,2))
  * @param haystack The string to search in. May not be NULL.
  * @param needle The string to search for. May not be NULL.
  * @returns A pointer to the start of the first occurrence of the given substring,
- *	or NULL if the string doesn't contain the substring. 
+ *	or NULL if the string doesn't contain the substring.
 */
 extern const char *u8_strstr(const char *haystack, const char *needle);
 
@@ -380,7 +380,7 @@ __nonnull((1,2))
  * @param haystack The string to search in. May not be NULL.
  * @param needle The string to search for. May not be NULL.
  * @returns A pointer to the start of the last occurrence of the given substring,
- *	or NULL if the string doesn't contain the substring. 
+ *	or NULL if the string doesn't contain the substring.
 */
 extern const char *u8_strrstr(const char *haystack, const char *needle);
 
@@ -460,7 +460,7 @@ extern bool u8_isvalid(const char *str);
 
 __nonnull((1,3))
 /** Applies map_f to every character in the utf-8 encoded string and writes them to dst.
- * If map_f returns 0, no character is written to dst. 
+ * If map_f returns 0, no character is written to dst.
  * Every character written to dst is guaranteed to be utf-8 normalized.
  * If dst is NULL, no write operations are performed but the correct byte amount is returned.
  * @param str The source string, may not be NULL.
