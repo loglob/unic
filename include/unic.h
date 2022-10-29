@@ -28,7 +28,7 @@ typedef uint32_t uchar_t;
 /** The amount of bits taken up by the minor category of an enum unic_gc value */
 #define UNIC_GC_SUB_BITS 3
 
-/* A unicode general category */
+/** A unicode general category */
 enum unic_gc
 {
 	UCLASS_OTHER = 0 << UNIC_GC_SUB_BITS,
@@ -148,8 +148,7 @@ enum unic_gc
 
 };
 
-/* Bindings for the library's utf8 component */
-#ifndef _REGION_utf8_h
+// #region utf8.h
 
 __nonnull((1))
 /** Reads the next unicode character from the given utf-8 encoded steam.
@@ -192,10 +191,9 @@ extern size_t u8dec(const char *str, uchar_t *c);
  * @returns The amount of bytes written. */
 extern size_t u8enc(uchar_t uc, char *buf);
 
-#endif // region ut8.h
+// #endregion utf8.h
 
-/* Bindings for the library's utility component */
-#ifndef _REGION_util_h
+// #region util.h
 
 /** Retrieves the unicode character class of the given character
  * @param c The character
@@ -246,10 +244,10 @@ extern uchar_t uchar_lower(uchar_t c);
 */
 extern uchar_t uchar_upper(uchar_t c);
 
-#endif // region util.h
+// #endregion util.h
 
-/* Bindings for the library's utf8 string handling component */
-#ifndef _REGION_u8string_h
+// #region u8string.h
+
 __nonnull((1))
 /** Determines the amount of unicode characters in the given utf-8 string
  * Does not count the NUL terminator.
@@ -500,6 +498,6 @@ __nonnull((4))
 */
 extern size_t u8_strcmap(const char *str, char *dst, size_t c, uchar_t (*map_f)(uchar_t));
 
-#endif
+// #endregion u8string.h
 
 #endif

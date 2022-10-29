@@ -1,9 +1,9 @@
-CC=cc -Wall -Wextra
+CC=xargs -a compile_flags.txt -- cc
 
 .PHONY: test unic install uninstall
 
 out/libunic.so: out/unic.o
-	cc -Wall -Wextra -shared $< -o $@
+	cc -shared $< -o $@
 
 test: out/test
 	./$<
@@ -14,7 +14,7 @@ out/test: test/test.c out/debug.o test/*.h
 
 out/unic.o: src/unic.c src/*.h include/unic.h
 	mkdir -p out
-	$(CC) -fpic -O3 -c $< -o $@
+	$(CC) $(CFLAGS) -fpic -c $< -o $@
 
 out/debug.o: src/unic.c src/*.h include/unic.h
 	mkdir -p out
