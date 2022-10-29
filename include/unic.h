@@ -15,7 +15,7 @@
 #define UNIC_BIT 21
 /** Type-correct EOF for unicode functions */
 #define UEOF ((uchar_t)-1)
-/** Overencoded NUL terminator to include \0 in utf-8 encoded strings */
+/** Over-encoded NUL terminator to include \0 in utf-8 encoded strings */
 #define UNUL "\xC0\x80"
 /** The maximum amount of bytes any UTF-8 encoded character can take up */
 #define UTF8_MAX 4
@@ -180,7 +180,7 @@ extern size_t u8ndec(const char *str, size_t n, uchar_t *c);
 __nonnull((1))
 /** Reads the next utf-8 encoded character from the given string.
  * Note that reading and re-encoding a character may change its length due to improper encoding in source streams.
- * A well-encoded NUL terminater is treated as a character of length 1.
+ * A well-encoded NUL terminator is treated as a character of length 1.
  * @param str The utf-8 encoded buffer to read from. May not be NULL.
  * @param c The location to store the character in. May be NULL to only determine the length of the next character.
  * @returns The amount of bytes read. */
@@ -278,6 +278,7 @@ extern size_t u8_strclen(const char *str, size_t c);
 __nonnull((1))
 /** Copies the utf-8 encoded string str to dst.
  * Every character written to dst is guaranteed to be utf-8 normalized.
+ * Over-encoded NUL characters are omitted from the output and don't terminate the input string.
  * If dst is NULL, no write operations are performed but the correct byte amount is returned.
  * @param str The utf-8 encoded source string. May not be NULL.
  * @param dst The destination buffer. May be NULL to determine required buffer size.
@@ -287,6 +288,7 @@ extern size_t u8_strcpy(const char *str, char *dst);
 
 /** Copies at most n unicode characters from str to dst.
  * Every character written to dst is guaranteed to be utf-8 normalized.
+ * Over-encoded NUL characters are omitted from the output and don't terminate the input string.
  * If dst is NULL, no write operations are performed but the correct byte amount is returned.
  * @param str The utf-8 encoded source string. May be NULL if n is 0.
  * @param dst The destination buffer. May be NULL to determine required buffer size.
@@ -297,10 +299,11 @@ extern size_t u8_strncpy(const char *str, char *dst, size_t n);
 
 /** Copies at most c bytes from str to dst.
  * Every character written to dst is guaranteed to be utf-8 normalized.
+ * Over-encoded NUL characters are omitted from the output and don't terminate the input string.
  * If dst is NULL, no write operations are performed but the correct byte amount is returned.
  * @param str The utf-8 encoded source string. May be NULL if c is 0.
  * @param dst The destination buffer. May be NULL to determine required buffer size.
- * @param c The maximum amount of bytes to copy (note that due to character reencoding this is NOT a limit on dst).
+ * @param c The maximum amount of bytes to copy (note that due to character re-encoding this is NOT a limit on dst).
  * @returns The amount of bytes written to dst, including the NUL terminator.
 */
 extern size_t u8_strccpy(const char *str, char *dst, size_t c);
@@ -326,7 +329,6 @@ extern uchar_t u8_strat(const char *str, size_t pos);
 __nonnull((1))
 /** Finds the first occurrence of the given character in the given utf-8 encoded string.
  * Note that, for utf-8 normalized strings, strstr achieves the same and will be more efficient.
- *
  * @param str The string. May not be NULL.
  * @param chr The character to find.
  * @returns A pointer to the start of the first occurrence of the given character,
@@ -340,13 +342,12 @@ __nonnull((1))
  * @param str The string. May not be NULL.
  * @param chr The character to find.
  * @returns A pointer to the start of the first occurrence of the given character or a case-insensitive variant of it,
- *	or NULL if the string doesn't cotain the character.
+ *	or NULL if the string doesn't contain the character.
 */
 extern const char *u8_strchrI(const char *str, uchar_t chr);
 
 __nonnull((1))
 /** Finds the last occurrence of the given character in the given utf-8 encoded string.
- *
  * @param str The string. May not be NULL.
  * @param chr The character to find
  * @returns A pointer to the start of the last occurrence of the given character,
@@ -462,6 +463,7 @@ __nonnull((1,3))
 /** Applies map_f to every character in the utf-8 encoded string and writes them to dst.
  * If map_f returns 0, no character is written to dst.
  * Every character written to dst is guaranteed to be utf-8 normalized.
+ * Over-encoded NUL characters from the input are passed to map_f as 0, but the actual single-byte NUL terminator is not.
  * If dst is NULL, no write operations are performed but the correct byte amount is returned.
  * @param str The source string, may not be NULL.
  * @param dst The destination buffer, may be NULL.
@@ -474,6 +476,7 @@ __nonnull((4))
 /** Applies map_f to, at most, the first n character in the utf-8 encoded string and writes them to dst.
  * If map_f returns 0, no character is written to dst.
  * Every character written to dst is guaranteed to be utf-8 normalized.
+ * Over-encoded NUL characters from the input are passed to map_f as 0, but the actual single-byte NUL terminator is not.
  * If dst is NULL, no write operations are performed but the correct byte amount is returned.
  * @param str The source string, may be NULL if n is 0.
  * @param dst The destination buffer, may be NULL.
@@ -487,6 +490,7 @@ __nonnull((4))
 /** Applies map_f to every character in the first c bytes of the utf-8 encoded string and writes them to buf.
  * If map_f returns 0, no character is written to buf.
  * Every character written to dst is guaranteed to be utf-8 normalized.
+ * Over-encoded NUL characters from the input are passed to map_f as 0, but the actual single-byte NUL terminator is not.
  * If dst is NULL, no write operations are performed but the correct byte amount is returned.
  * @param str The source string, may be NULL if c is 0.
  * @param dst The destination buffer, may be NULL.
