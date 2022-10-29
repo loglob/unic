@@ -2,8 +2,7 @@
 #pragma once
 #include <stddef.h>
 #include <stdbool.h>
-#include "utf8.h"
-#include "util.h"
+#include "../include/unic.h"
 
 size_t u8_strlen(const char *str)
 {
@@ -11,7 +10,7 @@ size_t u8_strlen(const char *str)
 
 	for (size_t c = 0; str[c]; len++)
 		c += u8dec(str + c, NULL);
-	
+
 	return len;
 }
 
@@ -21,7 +20,7 @@ size_t u8_strnlen(const char *str, size_t n)
 
 	for (size_t i = 0; i < n && str[len]; i++)
 		len += u8dec(str + len, NULL);
-	
+
 	return len;
 }
 
@@ -34,10 +33,9 @@ size_t u8_strclen(const char *str, size_t lim)
 		i += u8ndec(str + i, lim - i, NULL);
 		c++;
 	}
-	
+
 	return c;
 }
-
 
 size_t u8_strmap(const char *str, char *dst, uchar_t (*map_f)(uchar_t))
 {
@@ -72,7 +70,7 @@ size_t u8_strnmap(const char *str, char *dst, size_t n, uchar_t (*map_f)(uchar_t
 	if(dst)
 		dst[w] = 0;
 
-	return w + 1;	
+	return w + 1;
 }
 
 size_t u8_strcmap(const char *str, char *dst, size_t lim, uchar_t (*map_f)(uchar_t))
@@ -90,7 +88,7 @@ size_t u8_strcmap(const char *str, char *dst, size_t lim, uchar_t (*map_f)(uchar
 	if(dst)
 		dst[w] = 0;
 
-	return w + 1;	
+	return w + 1;
 }
 
 
@@ -123,10 +121,10 @@ const char *u8_strpos(const char *str, size_t pos)
 
 	for (i = 0; i < pos && str[r]; i++)
 		r += u8dec(str + r, NULL);
-	
+
 	if(i < pos)
 		return NULL;
-	
+
 	return str + r;
 }
 
@@ -257,7 +255,7 @@ bool u8_isnorm(const char *str)
 		if(uchar_is(c, UCLASS_UNASSIGNED) || l != u8enc(c, NULL))
 			return false;
 	}
-	
+
 	return true;
 }
 
@@ -271,7 +269,7 @@ bool u8_isvalid(const char *str)
 		if(uchar_is(c, UCLASS_UNASSIGNED))
 			return false;
 	}
-	
+
 	return true;
 }
 

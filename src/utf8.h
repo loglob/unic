@@ -1,7 +1,7 @@
 /* utf8.h: Allows for working with utf-8 encoded streams or buffers. */
 #pragma once
-#include "uchar.h"
 #include <stdio.h>
+#include "../include/unic.h"
 
 inline static size_t u8len(uchar_t c)
 {
@@ -75,7 +75,7 @@ size_t u8ndec(const char *str, size_t n, uchar_t *c)
 	// somewhat ad-hoc and garbage solution
 	if(n >= 4)
 		return u8dec(str, c);
-	
+
 	char buf[4] = {};
 
 	for (size_t i = 0; i < n; i++)
@@ -87,7 +87,7 @@ size_t u8ndec(const char *str, size_t n, uchar_t *c)
 size_t u8dec(const char *str, uchar_t *c)
 {
 	int cl = _cl1(str[0]);
-	
+
 	if(c)
 		*c = _w1252_fallback(*str);
 
@@ -107,7 +107,7 @@ size_t u8dec(const char *str, uchar_t *c)
 
 	if(c)
 		*c = v;
-	
+
 	return cl;
 }
 

@@ -3,7 +3,7 @@
 #pragma once
 #include <stdint.h>
 #include <stdlib.h>
-#include "uchar.h"
+#include "../include/unic.h"
 
 /* The amount of unicode characters assigned under the UNIC_VERSION unicode standard */
 #define UCDB_COUNT 34924

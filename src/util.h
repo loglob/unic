@@ -1,8 +1,7 @@
 /* util.h: Provides functions for working with unicode characters */
 #pragma once
-#include "uchar.h"
-#include "ucdb.h"
 #include <ctype.h>
+#include "ucdb.h"
 
 enum unic_gc uchar_class(uchar_t c)
 {
@@ -20,7 +19,7 @@ bool uchar_alike(uchar_t a, uchar_t b)
 		return true;
 
 	const struct ucdb_entry *ea = ucdb_get(a), *eb = ucdb_get(b);
-	
+
 	if(!ea || !eb)
 		return false;
 
