@@ -1,5 +1,4 @@
 /* utf8.h: Allows for working with utf-8 encoded streams or buffers. */
-#pragma once
 #include <stdio.h>
 #include "../include/unic.h"
 

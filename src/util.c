@@ -1,5 +1,4 @@
 /* util.h: Provides functions for working with unicode characters */
-#pragma once
 #include <ctype.h>
 #include "ucdb.h"
 

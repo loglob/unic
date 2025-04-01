@@ -1,22 +1,25 @@
-CC=xargs -a compile_flags.txt -- cc
+CC = xargs -t -a compile_flags.txt -- cc
+CFLAGS ?= -O3 -march=native
+OBJECTS = $(patsubst src/%.c,out/%.o, $(wildcard src/*.c))
+DEBUG_OBJECTS = $(patsubst %.o,%-debug.o, $(OBJECTS))
 
 .PHONY: test unic install uninstall
 
-out/libunic.so: out/unic.o
-	cc -shared $< -o $@
+out/libunic.so: $(OBJECTS)
+	cc -shared $^ -o $@
 
 test: out/test
 	./$<
 
-out/test: test/test.c out/debug.o test/*.h
+out/test: test/test.c $(DEBUG_OBJECTS) test/*.h
 	mkdir -p out
-	$(CC) -g $< out/debug.o -o $@ -lexplain
+	$(CC) -g $< $(DEBUG_OBJECTS) -o $@ -lexplain
 
-out/unic.o: src/unic.c src/*.h include/unic.h
+out/%.o: src/%.c src/*.h include/*
 	mkdir -p out
 	$(CC) $(CFLAGS) -fpic -c $< -o $@
 
-out/debug.o: src/unic.c src/*.h include/unic.h
+out/%-debug.o: src/%.c src/*.h include/*
 	mkdir -p out
 	$(CC) -g -c $< -o $@
 

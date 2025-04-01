@@ -1,5 +1,4 @@
 // u8string.h: Implements string functions for utf-8 strings
-#pragma once
 #include <stddef.h>
 #include <stdbool.h>
 #include "../include/unic.h"
