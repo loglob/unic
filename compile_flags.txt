@@ -3,3 +3,4 @@
 -Wextra
 -Isrc
 -Iinclude
+-Iccheck
