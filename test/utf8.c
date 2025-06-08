@@ -1,6 +1,5 @@
 #include "common.h"
 #include "unic.h"
-#include <libexplain/fwrite.h>
 
 TEST(u8enc_size_correct, struct Codepoint, chr)
 {

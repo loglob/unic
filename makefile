@@ -14,14 +14,14 @@ out/libunic.so: $(OBJECTS)
 	cc $(OPT_CFLAGS) -shared $^ -o $@
 
 test/%.so: test/%.c test/*.h ccheck ccheck/*.h include/*
-	cc $(OPT_CFLAGS) -shared $< -o $@ -lexplain
+	cc $(OPT_CFLAGS) -fPIC -shared $< -o $@
 
 test: ccheck/ccheck out/libunic.so -- ccheck/integer-provider.so $(TEST_OBJECTS)
 	./$^
 
 out/test: test/test.c $(DEBUG_OBJECTS) test/*.h
 	mkdir -p out
-	cc $(CFLAGS) -g $< $(DEBUG_OBJECTS) -o $@ -lexplain
+	cc $(CFLAGS) -g $< $(DEBUG_OBJECTS) -o $@
 
 out/%.o: src/%.c src/*.h include/*
 	mkdir -p out
