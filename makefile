@@ -1,5 +1,9 @@
-CC = xargs -t -a compile_flags.txt -- cc
-CFLAGS ?= -O3 -march=native
+# cflags needed for every build
+CFLAGS ?= $(shell cat compile_flags.txt)
+# cflags needed only for release builds
+OPT_CFLAGS ?= -O3 -march=native -mtune=native
+OPT_CFLAGS += $(CFLAGS)
+
 OBJECTS = $(patsubst src/%.c,out/%.o, $(wildcard src/*.c))
 DEBUG_OBJECTS = $(patsubst %.o,%-debug.o, $(OBJECTS))
 TEST_OBJECTS = $(patsubst %.c,%.so, $(wildcard test/*.c))
@@ -7,25 +11,25 @@ TEST_OBJECTS = $(patsubst %.c,%.so, $(wildcard test/*.c))
 .PHONY: test install uninstall --
 
 out/libunic.so: $(OBJECTS)
-	cc -shared $^ -o $@
+	cc $(OPT_CFLAGS) -shared $^ -o $@
 
 test/%.so: test/%.c test/*.h ccheck ccheck/*.h include/*
-	$(CC) -shared $< -o $@ -lexplain
+	cc $(OPT_CFLAGS) -shared $< -o $@ -lexplain
 
 test: ccheck/ccheck out/libunic.so -- ccheck/integer-provider.so $(TEST_OBJECTS)
 	./$^
 
 out/test: test/test.c $(DEBUG_OBJECTS) test/*.h
 	mkdir -p out
-	$(CC) -g $< $(DEBUG_OBJECTS) -o $@ -lexplain
+	cc $(CFLAGS) -g $< $(DEBUG_OBJECTS) -o $@ -lexplain
 
 out/%.o: src/%.c src/*.h include/*
 	mkdir -p out
-	$(CC) $(CFLAGS) -fpic -c $< -o $@
+	cc $(OPT_CFLAGS) -fpic -c $< -o $@
 
 out/%-debug.o: src/%.c src/*.h include/*
 	mkdir -p out
-	$(CC) -g -c $< -o $@
+	cc $(CFLAGS) -g -c $< -o $@
 
 doc: unic.dox include/unic.h
 	mkdir -p doc
