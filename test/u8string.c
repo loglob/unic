@@ -2,12 +2,12 @@
 #include "unic.h"
 
 /** Checks that u8_strncpy writes only the NUL terminator when n=0 */
-TEST(empty_strncpy, str_t, str)
+TEST(zero_char_strcpy, str_t, str)
 {
 	char scratch[10] = "aaaaaaaaaa";
 
-	assertIEq(1, u8_strncpy(str.bytes, NULL, 0));
-	assertIEq(1, u8_strncpy(str.bytes, scratch, 0));
+	assertIEq(1, u8z_strcpy(str.bytes, MAX_CHARS(0), NULL));
+	assertIEq(1, u8z_strcpy(str.bytes, MAX_CHARS(0), scratch));
 	assertTrue(*scratch == 0);
 	
 	for(size_t i = 1; i < sizeof(scratch); ++i)
@@ -15,24 +15,37 @@ TEST(empty_strncpy, str_t, str)
 }
 
 /** Checks that u8_strccpy writes only the NUL terminator when c=0 */
-TEST(empty_strccpy, str_t, str)
+TEST(zero_byte_strcpy, str_t, str)
 {
 	char scratch[10] = "aaaaaaaaaa";
 
-	assertIEq(1, u8_strccpy(str.bytes, NULL, 0));
-	assertIEq(1, u8_strccpy(str.bytes, scratch, 0));
+	assertIEq(1, u8z_strcpy(str.bytes, MAX_BYTES(0), NULL));
+	assertIEq(1, u8z_strcpy(str.bytes, MAX_BYTES(0), scratch));
 	assertTrue(*scratch == 0);
 	
 	for(size_t i = 1; i < sizeof(scratch); ++i)
 		assertCEq('a', scratch[i], "Canary at index %zu overwritten", i);
 }
 
-/** Ensures that u8_str*len() on the entire string is correct */
+/** Ensures that u8*_strlen() on the entire string is correct */
 TEST(strlen_correct, str_t, str)
 {
 	assertIEq(str.count, u8_strlen(str.bytes));
-	assertIEq(str.size, u8_strnlen(str.bytes, str.count));
-	assertIEq(str.count, u8_strclen(str.bytes, str.size));
+	assertIEq(str.count, u8z_strlen(str.bytes, MAX_BYTES(str.size)));
+	assertIEq(str.count, u8z_strlen(str.bytes, MAX_CHARS(str.count)));
+}
+
+/** Ensures that u8z_strsize() on the entire string is correct */
+TEST(strsize_correct, str_t, str)
+{
+	assertIEq(str.count, u8z_strsize(str.bytes, NUL_TERMINATED).maxChars);
+	assertIEq(str.size, u8z_strsize(str.bytes, NUL_TERMINATED).maxBytes);
+
+	assertIEq(str.count, u8z_strsize(str.bytes, MAX_BYTES(str.size)).maxChars);
+	assertIEq(str.size, u8z_strsize(str.bytes, MAX_BYTES(str.size)).maxBytes);
+
+	assertIEq(str.count, u8z_strsize(str.bytes, MAX_CHARS(str.count)).maxChars);
+	assertIEq(str.size, u8z_strsize(str.bytes, MAX_CHARS(str.count)).maxBytes);
 }
 
 /** Ensures that indexing is correct for valid and excess indices */

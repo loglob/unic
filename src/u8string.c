@@ -5,274 +5,95 @@
 
 size_t u8_strlen(const char *str)
 {
-	size_t len = 0;
-
-	for (size_t c = 0; str[c]; len++)
-		c += u8dec(str + c, NULL);
-
-	return len;
-}
-
-size_t u8_strnlen(const char *str, size_t n)
-{
-	size_t len = 0;
-
-	for (size_t i = 0; i < n && str[len]; i++)
-		len += u8dec(str + len, NULL);
-
-	return len;
-}
-
-size_t u8_strclen(const char *str, size_t lim)
-{
-	size_t c = 0;
-
-	for (size_t i = 0; i < lim && str[i];)
-	{
-		i += u8ndec(str + i, lim - i, NULL);
-		c++;
-	}
-
-	return c;
+	return u8z_strlen(str, NUL_TERMINATED);
 }
 
 size_t u8_strmap(const char *str, char *dst, uchar_t (*map_f)(uchar_t))
 {
-	size_t r = 0, w = 0;
-
-	while(str[r])
-	{
-		uchar_t c;
-		r += u8dec(str + r, &c);
-		c = map_f(c);
-		w += u8enc(c, dst ? dst + w : NULL);
-	}
-
-	if(dst)
-		dst[w] = 0;
-
-	return w + 1;
-}
-
-size_t u8_strnmap(const char *str, char *dst, size_t n, uchar_t (*map_f)(uchar_t))
-{
-	size_t r = 0, w = 0;
-
-	for (size_t i = 0; i < n && str[r]; i++)
-	{
-		uchar_t c;
-		r += u8dec(str + r, &c);
-		c = map_f(c);
-		w += u8enc(c, dst ? dst + w : NULL);
-	}
-
-	if(dst)
-		dst[w] = 0;
-
-	return w + 1;
-}
-
-size_t u8_strcmap(const char *str, char *dst, size_t lim, uchar_t (*map_f)(uchar_t))
-{
-	size_t r = 0, w = 0;
-
-	while(r < lim && str[r])
-	{
-		uchar_t c;
-		r += u8ndec(str + r, lim - r, &c);
-		c = map_f(c);
-		w += u8enc(c, dst ? dst + w : NULL);
-	}
-
-	if(dst)
-		dst[w] = 0;
-
-	return w + 1;
-}
-
-
-// used with the strmap functions
-static uchar_t uchar_id(uchar_t x)
-{
-	return x;
+	return u8z_strmap(str, NUL_TERMINATED, dst, map_f);
 }
 
 size_t u8_strcpy(const char *str, char *dst)
 {
-	return u8_strmap(str, dst, uchar_id);
+	return u8z_strcpy(str, NUL_TERMINATED, dst);
 }
-
-size_t u8_strncpy(const char *str, char *dst, size_t n)
-{
-	return u8_strnmap(str, dst, n, uchar_id);
-}
-
-size_t u8_strccpy(const char *str, char *dst, size_t c)
-{
-	return u8_strcmap(str, dst, c, uchar_id);
-}
-
 
 const char *u8_strpos(const char *str, size_t pos)
 {
-	size_t r = 0;
-	size_t i;
-
-	for (i = 0; i < pos && str[r]; i++)
-		r += u8dec(str + r, NULL);
-
-	if(i < pos)
-		return NULL;
-
-	return str + r;
+	return u8z_strpos(str, NUL_TERMINATED, pos);
 }
 
 uchar_t u8_strat(const char *str, size_t pos)
 {
-	const char *s = u8_strpos(str, pos);
-
-	if(s)
-	{
-		uchar_t ret;
-
-		u8dec(s, &ret);
-
-		return ret;
-	}
-	else
-		return 0;
-}
-
-/** Expands to an iteration over every character in the string
- * @param str The string to iterate over
- * @param ic The character index
- * @param i The byte index
- * @param c The current character
- * @param l Its encoded length
-*/
-#define SCAN(...) { \
-	size_t ic = 0; \
-	for(size_t i = 0; str[i]; ic++) \
-	{ \
-		uchar_t c; \
-		const size_t l = u8dec(str + i, &c); \
-		{ __VA_ARGS__ } \
-		i += l; \
-	} \
-}
-
-#define SCANFUNC(cond) { \
-		SCAN({\
-			if(cond) \
-				return str + i; \
-		}) \
-	return NULL; \
-}
-
-#define RSCANFUNC(cond) { \
-		const char *ret = NULL; \
-		SCAN({\
-			if(cond) \
-				ret = str + i; \
-		}) \
-	return ret; \
+	return u8z_strat(str, NUL_TERMINATED, pos);
 }
 
 const char *u8_strchr(const char *str, uchar_t chr)
-	SCANFUNC(c == chr)
+{
+	return u8z_strchr(str, NUL_TERMINATED, chr);
+}
 
 const char *u8_strrchr(const char *str, uchar_t chr)
-	RSCANFUNC(c == chr)
+{
+	return u8z_strrchr(str, NUL_TERMINATED, chr);
+}
 
 const char *u8_strchrI(const char *str, uchar_t chr)
-	SCANFUNC(uchar_alike(c, chr))
+{
+	return u8z_strchrI(str, NUL_TERMINATED, chr);
+}
 
 const char *u8_strrchrI(const char *str, uchar_t chr)
-	RSCANFUNC(uchar_alike(c, chr))
-
+{
+	return u8z_strrchrI(str, NUL_TERMINATED, chr);
+}
 
 const char *u8_strstr(const char *str, const char *needle)
 {
-	size_t n = u8_strlen(needle);
-
-	SCANFUNC(u8_strneq(str + i, needle, n))
+	return u8z_strstr(str, NUL_TERMINATED, needle, NUL_TERMINATED);
 }
 
 const char *u8_strrstr(const char *str, const char *needle)
 {
-	size_t n = u8_strlen(needle);
-
-	RSCANFUNC(u8_strneq(str + i, needle, n))
+	return u8z_strrstr(str, NUL_TERMINATED, needle, NUL_TERMINATED);
 }
 
 const char *u8_strstrI(const char *str, const char *needle)
 {
-	size_t n = u8_strlen(needle);
-
-	SCANFUNC(u8_strneqI(str + i, needle, n))
+	return u8z_strstrI(str, NUL_TERMINATED, needle, NUL_TERMINATED);
 }
 
 const char *u8_strrstrI(const char *str, const char *needle)
 {
-	size_t n = u8_strlen(needle);
-
-	RSCANFUNC(u8_strneqI(str + i, needle, n))
-}
-
-#define BISCAN(loopcond, failcond) { \
-	uchar_t ac, bc; \
-	for(size_t i = 0; loopcond && (*a || *b); i++) {\
-	size_t la = u8dec(a, &ac), lb = u8dec(b, &bc); \
-	if(!*a || !*b || failcond) return false; \
-	a += la; b += lb; \
-} \
-	return true; \
+	return u8z_strrstrI(str, NUL_TERMINATED, needle, NUL_TERMINATED);
 }
 
 bool u8_streq(const char *a, const char *b)
-	BISCAN(true, ac != bc)
+{
+	return u8z_streq(a, NUL_TERMINATED, b, NUL_TERMINATED);
+}
 
 bool u8_strneq(const char *a, const char *b, size_t n)
-	BISCAN(i < n, ac != bc)
+{
+	return u8z_streq(a, MAX_CHARS(n), b, MAX_CHARS(n));
+}
 
 bool u8_streqI(const char *a, const char *b)
-	BISCAN(true, !uchar_alike(ac, bc))
+{
+	return u8z_streqI(a, NUL_TERMINATED, b, NUL_TERMINATED);
+}
 
 bool u8_strneqI(const char *a, const char *b, size_t n)
-	BISCAN(i < n, !uchar_alike(ac, bc))
+{
+	return u8z_streqI(a, MAX_CHARS(n), b, MAX_CHARS(n));
+}
 
 bool u8_isnorm(const char *str)
 {
-	for (size_t i = 0; str[i];)
-	{
-		uchar_t c;
-		size_t l = u8dec(str + i, &c);
-		i += l;
-
-		if(c == 0 && l == 2)
-			continue;
-		if(uchar_is(c, UCLASS_UNASSIGNED) || l != u8enc(c, NULL))
-			return false;
-	}
-
-	return true;
+	return u8z_isnorm(str, NUL_TERMINATED);
 }
 
 bool u8_isvalid(const char *str)
 {
-	for (size_t i = 0; str[i];)
-	{
-		uchar_t c;
-		i += u8dec(str + i, &c);
-
-		if(uchar_is(c, UCLASS_UNASSIGNED))
-			return false;
-	}
-
-	return true;
+	return u8z_isvalid(str, NUL_TERMINATED);
 }
-
-#undef SCAN
-#undef SCANFUNC
-#undef RSCANFUNC
-#undef BISCAN
