@@ -6,8 +6,8 @@ TEST(zero_char_strcpy, str_t, str)
 {
 	char scratch[10] = "aaaaaaaaaa";
 
-	assertIEq(1, u8z_strcpy(str.bytes, MAX_CHARS(0), NULL, 1024, true).maxBytes);
-	assertIEq(1, u8z_strcpy(str.bytes, MAX_CHARS(0), scratch, sizeof(scratch), true).maxBytes);
+	assertIEq(1, u8z_strcpy(str.bytes, MAX_CHARS(0), NULL, 1024, true).byteCount);
+	assertIEq(1, u8z_strcpy(str.bytes, MAX_CHARS(0), scratch, sizeof(scratch), true).byteCount);
 	assertTrue(*scratch == 0);
 	
 	for(size_t i = 1; i < sizeof(scratch); ++i)
@@ -19,8 +19,8 @@ TEST(zero_byte_strcpy, str_t, str)
 {
 	char scratch[10] = "aaaaaaaaaa";
 
-	assertIEq(1, u8z_strcpy(str.bytes, MAX_BYTES(0), NULL, 1024, true).maxBytes);
-	assertIEq(1, u8z_strcpy(str.bytes, MAX_BYTES(0), scratch, sizeof(scratch), true).maxBytes);
+	assertIEq(1, u8z_strcpy(str.bytes, MAX_BYTES(0), NULL, 1024, true).byteCount);
+	assertIEq(1, u8z_strcpy(str.bytes, MAX_BYTES(0), scratch, sizeof(scratch), true).byteCount);
 	assertTrue(*scratch == 0);
 	
 	for(size_t i = 1; i < sizeof(scratch); ++i)
@@ -38,14 +38,14 @@ TEST(strlen_correct, str_t, str)
 /** Ensures that u8z_strsize() on the entire string is correct */
 TEST(strsize_correct, str_t, str)
 {
-	assertIEq(str.count, u8z_strsize(str.bytes, NUL_TERMINATED).maxChars);
-	assertIEq(str.size, u8z_strsize(str.bytes, NUL_TERMINATED).maxBytes);
+	assertIEq(str.count, u8z_strsize(str.bytes, NUL_TERMINATED).charCount);
+	assertIEq(str.size, u8z_strsize(str.bytes, NUL_TERMINATED).byteCount);
 
-	assertIEq(str.count, u8z_strsize(str.bytes, MAX_BYTES(str.size)).maxChars);
-	assertIEq(str.size, u8z_strsize(str.bytes, MAX_BYTES(str.size)).maxBytes);
+	assertIEq(str.count, u8z_strsize(str.bytes, MAX_BYTES(str.size)).charCount);
+	assertIEq(str.size, u8z_strsize(str.bytes, MAX_BYTES(str.size)).byteCount);
 
-	assertIEq(str.count, u8z_strsize(str.bytes, MAX_CHARS(str.count)).maxChars);
-	assertIEq(str.size, u8z_strsize(str.bytes, MAX_CHARS(str.count)).maxBytes);
+	assertIEq(str.count, u8z_strsize(str.bytes, MAX_CHARS(str.count)).charCount);
+	assertIEq(str.size, u8z_strsize(str.bytes, MAX_CHARS(str.count)).byteCount);
 }
 
 /** Ensures that indexing is correct for valid and excess indices */

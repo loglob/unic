@@ -154,11 +154,11 @@ typedef struct
 	/** If set, `maxBytes` is an exact byte count, and NUL terminators should be treated as regular single byte characters. */
 	bool bytesExact : 1;
 	/** A maximum amount of bytes the string's content spans */
-	size_t maxBytes : 63;
+	size_t byteCount : 63;
 	/** If set, `maxChars` is an exact character count, and NUL terminators should be treated as regular single byte characters. */
 	bool charsExact : 1;
 	/** A maximum amount of characters the string's content spans */
-	size_t maxChars : 63;
+	size_t charCount : 63;
 } u8size_t;
 
 

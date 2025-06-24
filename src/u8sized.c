@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 #define HAS_NEXT(byteIx, charIx, size, str) \
-	( (byteIx) < (size).maxBytes && (charIx) < (size).maxChars && ((size).bytesExact || (size).charsExact || str[byteIx]) )
+	( (byteIx) < (size).byteCount && (charIx) < (size).charCount && ((size).bytesExact || (size).charsExact || str[byteIx]) )
 
 /** Expands to an iteration over every character in the string
 	@param str The string to iterate over
@@ -18,7 +18,7 @@
 	for(size_t byteIx = 0, charIx = 0; HAS_NEXT(byteIx, charIx, _z, _s); ++charIx) \
 	{ \
 		uchar_t c; \
-		const size_t l = u8ndec(_s + byteIx, _z.maxBytes - byteIx, &c); \
+		const size_t l = u8ndec(_s + byteIx, _z.byteCount - byteIx, &c); \
 		{ __VA_ARGS__ } \
 		byteIx += l; \
 	} \
@@ -32,10 +32,10 @@
 	{ \
 		uchar_t c1, c2; \
 		const size_t l1 = HAS_NEXT(byteIx1, charIx1, _z1, _s1) \
-			? u8ndec(_s1 + byteIx1, _z1.maxBytes - byteIx1, &c1) \
+			? u8ndec(_s1 + byteIx1, _z1.byteCount - byteIx1, &c1) \
 			: (c1 = 0); \
 		const size_t l2 = HAS_NEXT(byteIx2, charIx2, _z2, _s2) \
-			? u8ndec(_s2 + byteIx2, _z2.maxBytes - byteIx2, &c2) \
+			? u8ndec(_s2 + byteIx2, _z2.byteCount - byteIx2, &c2) \
 			: (c2 = 0); \
 		{ __VA_ARGS__ } \
 		byteIx1 += l1; \
@@ -48,9 +48,9 @@ u8size_t u8z_min(u8size_t a, u8size_t b)
 {
 	return (u8size_t) {
 		a.bytesExact || b.bytesExact,
-		(a.maxBytes < b.maxBytes) ? a.maxBytes : b.maxBytes,
+		(a.byteCount < b.byteCount) ? a.byteCount : b.byteCount,
 		a.charsExact || b.charsExact,
-		(a.maxChars < b.maxChars) ? a.maxChars : b.maxChars
+		(a.charCount < b.charCount) ? a.charCount : b.charCount
 	};
 }
 
@@ -58,9 +58,9 @@ u8size_t u8z_off(u8size_t z, size_t byteOffset, size_t charOffset)
 {
 	return (u8size_t) {
 		z.bytesExact,
-		byteOffset > z.maxBytes ? 0 : z.maxBytes - byteOffset,
+		byteOffset > z.byteCount ? 0 : z.byteCount - byteOffset,
 		z.charsExact,
-		charOffset > z.maxChars ? 0 : z.maxChars - charOffset
+		charOffset > z.charCount ? 0 : z.charCount - charOffset
 	};
 
 }
@@ -83,7 +83,7 @@ u8size_t u8z_strsize(const char *str, u8size_t size)
 size_t u8z_strlen(const char *str, u8size_t size)
 {
 	if(size.charsExact)
-		return size.maxChars;
+		return size.charCount;
 
 	size_t chars = 0;
 
@@ -153,7 +153,7 @@ const char *u8z_strstr(const char *haystack, u8size_t n, const char *needle, u8s
 	const size_t len = u8z_strlen(needle, m);
 	// make length available to streq()
 	m.charsExact = true;
-	m.maxChars = len;
+	m.charCount = len;
 
 	SCANFUNC(haystack, n, u8z_streq(
 		haystack + byteIx, u8z_min(u8z_off(n, byteIx, charIx), m),
@@ -166,7 +166,7 @@ const char *u8z_strrstr(const char *haystack, u8size_t n, const char *needle, u8
 	const size_t len = u8z_strlen(needle, m);
 	// make length available to streq()
 	m.charsExact = true;
-	m.maxChars = len;
+	m.charCount = len;
 
 	R_SCANFUNC(haystack, n, u8z_streq(
 		haystack + byteIx, u8z_min(u8z_off(n, byteIx, charIx), m),
@@ -180,7 +180,7 @@ const char *u8z_strstrI(const char *haystack, u8size_t n, const char *needle, u8
 	const size_t len = u8z_strlen(needle, m);
 	// make length available to streq()
 	m.charsExact = true;
-	m.maxChars = len;
+	m.charCount = len;
 
 	SCANFUNC(haystack, n, u8z_streqI(
 		haystack + byteIx, u8z_min(u8z_off(n, byteIx, charIx), m),
@@ -193,7 +193,7 @@ const char *u8z_strrstrI(const char *haystack, u8size_t n, const char *needle, u
 	const size_t len = u8z_strlen(needle, m);
 	// make length available to streq()
 	m.charsExact = true;
-	m.maxChars = len;
+	m.charCount = len;
 
 	R_SCANFUNC(haystack, n, u8z_streqI(
 		haystack + byteIx, u8z_min(u8z_off(n, byteIx, charIx), m),
@@ -204,10 +204,10 @@ const char *u8z_strrstrI(const char *haystack, u8size_t n, const char *needle, u
 static inline bool triviallyNotEqual(u8size_t a, u8size_t b)
 {
 	#define DIV_CEIL(n,d) ((n)/(d) + ((n)%(d) > 0))
-	return (a.bytesExact && (a.maxBytes > b.maxBytes || DIV_CEIL(a.maxBytes, UTF8_MAX) > b.maxChars))
-		|| (b.bytesExact && (b.maxBytes > a.maxBytes || DIV_CEIL(b.maxBytes, UTF8_MAX) > a.maxChars))
-		|| (a.charsExact && (a.maxChars > b.maxChars || a.maxChars > b.maxBytes))
-		|| (b.charsExact && (b.maxChars > a.maxChars || b.maxChars > a.maxBytes));
+	return (a.bytesExact && (a.byteCount > b.byteCount || DIV_CEIL(a.byteCount, UTF8_MAX) > b.charCount))
+		|| (b.bytesExact && (b.byteCount > a.byteCount || DIV_CEIL(b.byteCount, UTF8_MAX) > a.charCount))
+		|| (a.charsExact && (a.charCount > b.charCount || a.charCount > b.byteCount))
+		|| (b.charsExact && (b.charCount > a.charCount || b.charCount > a.byteCount));
 }
 
 bool u8z_streq(const char *a, u8size_t n, const char *b, u8size_t m)
@@ -303,5 +303,5 @@ u8size_t u8z_strmap(const char *str, u8size_t size, char *dst, size_t cap, bool 
 		} 
 	}
 
-	return (u8size_t){ .bytesExact = !truncated, .maxBytes = bytes, .charsExact = !truncated, .maxChars = chars };
+	return (u8size_t){ .bytesExact = !truncated, .byteCount = bytes, .charsExact = !truncated, .charCount = chars };
 }
