@@ -489,6 +489,20 @@ extern u8size_t u8_strmap(const char *str, char *dst, size_t cap, bool nulTermin
 */
 extern u8size_t u8z_strsize(const char *str, u8size_t size);
 
+/** Minimum of string sizes
+	@returns The size that is the minimum of both `a` and `b`
+*/
+extern u8size_t u8z_min(u8size_t a, u8size_t b);
+
+/** Calculates the new size fo a string after it is offset.
+	Both byte and character counts must be known,
+		`u8z_strsize` can be used to learn character count from byte count and vice-versa.
+
+	@param z The string size before offsetting
+	@returns The string size after offsetting
+*/
+extern u8size_t u8z_offset(u8size_t z, size_t byteOffset, size_t charOffset);
+
 /** Variant of `u8_strlen()` on a sized prefix */
 extern size_t u8z_strlen(const char *str, u8size_t size);
 /** Variant of `u8_strcpy()` on a sized prefix */

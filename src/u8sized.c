@@ -54,7 +54,7 @@ u8size_t u8z_min(u8size_t a, u8size_t b)
 	};
 }
 
-u8size_t u8z_off(u8size_t z, size_t byteOffset, size_t charOffset)
+u8size_t u8z_offset(u8size_t z, size_t byteOffset, size_t charOffset)
 {
 	return (u8size_t) {
 		z.bytesExact,
@@ -156,7 +156,7 @@ const char *u8z_strstr(const char *haystack, u8size_t n, const char *needle, u8s
 	m.charCount = len;
 
 	SCANFUNC(haystack, n, u8z_streq(
-		haystack + byteIx, u8z_min(u8z_off(n, byteIx, charIx), m),
+		haystack + byteIx, u8z_min(u8z_offset(n, byteIx, charIx), m),
 		needle, m
 	))
 }
@@ -169,7 +169,7 @@ const char *u8z_strrstr(const char *haystack, u8size_t n, const char *needle, u8
 	m.charCount = len;
 
 	R_SCANFUNC(haystack, n, u8z_streq(
-		haystack + byteIx, u8z_min(u8z_off(n, byteIx, charIx), m),
+		haystack + byteIx, u8z_min(u8z_offset(n, byteIx, charIx), m),
 		needle, m
 	))
 
@@ -183,7 +183,7 @@ const char *u8z_strstrI(const char *haystack, u8size_t n, const char *needle, u8
 	m.charCount = len;
 
 	SCANFUNC(haystack, n, u8z_streqI(
-		haystack + byteIx, u8z_min(u8z_off(n, byteIx, charIx), m),
+		haystack + byteIx, u8z_min(u8z_offset(n, byteIx, charIx), m),
 		needle, m
 	))
 }
@@ -196,7 +196,7 @@ const char *u8z_strrstrI(const char *haystack, u8size_t n, const char *needle, u
 	m.charCount = len;
 
 	R_SCANFUNC(haystack, n, u8z_streqI(
-		haystack + byteIx, u8z_min(u8z_off(n, byteIx, charIx), m),
+		haystack + byteIx, u8z_min(u8z_offset(n, byteIx, charIx), m),
 		needle, m
 	))
 }
