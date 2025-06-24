@@ -1,9 +1,21 @@
 #include "common.h"
 #include "unic.h"
 
+/** Quells a GCC warning because the scratch buffers don't have NUL terminators */
+#ifdef __has_attribute
+	#if __has_attribute(nonstring)
+		#define NONSTRING __attribute__((nonstring))
+	#else
+		#define NONSTRING
+	#endif
+#else
+#define NONSTRING
+#endif
+
 /** Checks that u8_strncpy writes only the NUL terminator when n=0 */
 TEST(zero_char_strcpy, str_t, str)
 {
+	NONSTRING
 	char scratch[10] = "aaaaaaaaaa";
 
 	assertIEq(1, u8z_strcpy(str.bytes, MAX_CHARS(0), NULL, 1024, true).byteCount);
@@ -17,6 +29,7 @@ TEST(zero_char_strcpy, str_t, str)
 /** Checks that u8_strccpy writes only the NUL terminator when c=0 */
 TEST(zero_byte_strcpy, str_t, str)
 {
+	NONSTRING
 	char scratch[10] = "aaaaaaaaaa";
 
 	assertIEq(1, u8z_strcpy(str.bytes, MAX_BYTES(0), NULL, 1024, true).byteCount);
