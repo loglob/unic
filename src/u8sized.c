@@ -100,9 +100,9 @@ static uchar_t uchar_id(uchar_t x)
 	return x;
 }
 
-size_t u8z_strcpy(const char *str, u8size_t size, char *dst)
+u8size_t u8z_strcpy(const char *str, u8size_t size, char *dst, size_t cap, bool nulTerminate)
 {
-	return u8z_strmap(str, size, dst, uchar_id);
+	return u8z_strmap(str, size, dst, cap, nulTerminate, uchar_id);
 }
 
 uchar_t u8z_strat(const char *str, u8size_t size, size_t pos)
@@ -258,21 +258,50 @@ bool u8z_isvalid(const char *str, u8size_t size)
 	return true;
 }
 
-size_t u8z_strmap(const char *str, u8size_t size, char *dst, uchar_t (*map_f)(uchar_t))
+u8size_t u8z_strmap(const char *str, u8size_t size, char *dst, size_t cap, bool nulTerminate, uchar_t (*map_f)(uchar_t))
 {
-	size_t off = 0;
+	size_t bytes = 0;
+	size_t chars = 0;
+	bool truncated = false;
 
 	SCAN(str, size, {
 		const uchar_t y = map_f(c);
+		char next[UTF8_MAX];
+		size_t nl;
 
-		if(y != 0)
-			off += u8enc(y, dst ? dst + off : NULL);
+		if(!y && nulTerminate)
+		{
+			next[0] = UNUL[0];
+			next[1] = UNUL[1];
+			nl = 2;
+		}
+		else
+			nl = u8enc(y, next);
+		
+		if(bytes + nl + !!nulTerminate > cap)
+		{
+			truncated = true;
+			break;
+		}
+
+		if(dst) for(size_t i = 0; i < nl; ++i)
+			dst[bytes + i] = next[i];
+
+		bytes += nl;
+		++chars;
 	})
 
-	if(dst)
-		dst[off++] = 0;
-	else
-		++off;
+	if(nulTerminate)
+	{
+		if(cap == 0)
+			truncated = true;
+		else
+		{
+			if(dst)
+				dst[bytes] = 0;
+			++bytes;
+		} 
+	}
 
-	return off;
+	return (u8size_t){ .bytesExact = !truncated, .maxBytes = bytes, .charsExact = !truncated, .maxChars = chars };
 }

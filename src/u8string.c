@@ -8,14 +8,14 @@ size_t u8_strlen(const char *str)
 	return u8z_strlen(str, NUL_TERMINATED);
 }
 
-size_t u8_strmap(const char *str, char *dst, uchar_t (*map_f)(uchar_t))
+u8size_t u8_strmap(const char *str, char *dst, size_t cap, bool nulTerminate, uchar_t (*map_f)(uchar_t))
 {
-	return u8z_strmap(str, NUL_TERMINATED, dst, map_f);
+	return u8z_strmap(str, NUL_TERMINATED, dst, cap, nulTerminate, map_f);
 }
 
-size_t u8_strcpy(const char *str, char *dst)
+u8size_t u8_strcpy(const char *str, char *dst, size_t cap, bool nulTerminate)
 {
-	return u8z_strcpy(str, NUL_TERMINATED, dst);
+	return u8z_strcpy(str, NUL_TERMINATED, dst, cap, nulTerminate);
 }
 
 const char *u8_strpos(const char *str, size_t pos)

@@ -6,8 +6,8 @@ TEST(zero_char_strcpy, str_t, str)
 {
 	char scratch[10] = "aaaaaaaaaa";
 
-	assertIEq(1, u8z_strcpy(str.bytes, MAX_CHARS(0), NULL));
-	assertIEq(1, u8z_strcpy(str.bytes, MAX_CHARS(0), scratch));
+	assertIEq(1, u8z_strcpy(str.bytes, MAX_CHARS(0), NULL, 1024, true).maxBytes);
+	assertIEq(1, u8z_strcpy(str.bytes, MAX_CHARS(0), scratch, sizeof(scratch), true).maxBytes);
 	assertTrue(*scratch == 0);
 	
 	for(size_t i = 1; i < sizeof(scratch); ++i)
@@ -19,8 +19,8 @@ TEST(zero_byte_strcpy, str_t, str)
 {
 	char scratch[10] = "aaaaaaaaaa";
 
-	assertIEq(1, u8z_strcpy(str.bytes, MAX_BYTES(0), NULL));
-	assertIEq(1, u8z_strcpy(str.bytes, MAX_BYTES(0), scratch));
+	assertIEq(1, u8z_strcpy(str.bytes, MAX_BYTES(0), NULL, 1024, true).maxBytes);
+	assertIEq(1, u8z_strcpy(str.bytes, MAX_BYTES(0), scratch, sizeof(scratch), true).maxBytes);
 	assertTrue(*scratch == 0);
 	
 	for(size_t i = 1; i < sizeof(scratch); ++i)

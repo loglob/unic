@@ -148,7 +148,33 @@ enum unic_gc
 
 };
 
-// #region utf8.h
+/** Specified the size of a string.*/
+typedef struct
+{
+	/** If set, `maxBytes` is an exact byte count, and NUL terminators should be treated as regular single byte characters. */
+	bool bytesExact : 1;
+	/** A maximum amount of bytes the string's content spans */
+	size_t maxBytes : 63;
+	/** If set, `maxChars` is an exact character count, and NUL terminators should be treated as regular single byte characters. */
+	bool charsExact : 1;
+	/** A maximum amount of characters the string's content spans */
+	size_t maxChars : 63;
+} u8size_t;
+
+
+/** A u8size that specifies only a maximum byte size */
+#define MAX_BYTES(n) ((u8size_t){ false, (n), false, (SIZE_MAX >> 1) })
+/** A u8size that specifies only a maximum character count */
+#define MAX_CHARS(n) ((u8size_t){ false, (SIZE_MAX >> 1), false, (n) })
+/** A u8size that specifies an exact byte count */
+#define EXACT_BYTES(n) ((u8size_t){ true, (n), false, (SIZE_MAX >> 1) })
+/** A u8size that specifies an exact character count */
+#define EXACT_CHARS(n) ((u8size_t){ false, (SIZE_MAX >> 1), true, (n) })
+/** A u8size that imposes no size limit, i.e. reads until a NUL byte. */
+#define NUL_TERMINATED ((u8size_t){ false, (SIZE_MAX >> 1), false, (SIZE_MAX >> 1) })
+
+
+// #region utf8.c
 
 __nonnull((1))
 /** Reads the next unicode character from the given utf-8 encoded steam.
@@ -191,9 +217,9 @@ extern size_t u8dec(const char *str, uchar_t *c);
 	@returns The amount of bytes written. */
 extern size_t u8enc(uchar_t uc, char *buf);
 
-// #endregion utf8.h
+// #endregion utf8.c
 
-// #region util.h
+// #region util.c
 
 /** Retrieves the unicode character class of the given character
 	@param c The character
@@ -244,10 +270,9 @@ extern uchar_t uchar_lower(uchar_t c);
 */
 extern uchar_t uchar_upper(uchar_t c);
 
-// #endregion util.h
+// #endregion util.c
 
-
-// #region u8string.h
+// #region u8string.c
 
 __nonnull((1))
 /** Determines the amount of unicode characters in the given NUL-terminated UTF-8 string.
@@ -266,10 +291,13 @@ __nonnull((1))
 	If dst is NULL, no write operations are performed but the correct byte amount is returned.
 
 	@param str The NUL-terminated UTF-8 source string. May not be NULL.
-	@param dst The destination buffer. May be NULL to determine required buffer size.
-	@returns The amount of bytes written to dst, including the NUL terminator.
+	@param dst The destination buffer, may be NULL to just check the resulting size. The function behaves identical otherwise.
+	@param cap Capacity of `dst` in bytes.
+	@param nulTerminate If true, NUL characters written to `dst` are over-encoded as UNUL, and a closing NUL terminator is appended.
+	@returns The size of the string written to `dst`. The `*exact` flags are set iff. the output was not truncated. 
+			 If `nulTerminate` is set, the byte count includes the final NUL terminator, but the char does not.
 */
-extern size_t u8_strcpy(const char *str, char *dst);
+extern u8size_t u8_strcpy(const char *str, char *dst, size_t cap, bool nulTerminate);
 
 __nonnull((1))
 /** Looks up a character index in a UTF-8 encoded string.
@@ -413,46 +441,28 @@ __nonnull((1))
 */
 extern bool u8_isvalid(const char *str);
 
-__nonnull((1,3))
+__nonnull((1,5))
 /** Applies map_f to every character in the utf-8 encoded string and writes them to dst.
-	If map_f returns 0, no character is written to dst.
+
 	Every character written to dst is guaranteed to be utf-8 normalized.
-	Over-encoded NUL characters from the input are passed to map_f as 0, but the actual single-byte NUL terminator is not.
 	If dst is NULL, no write operations are performed but the correct byte amount is returned.
+
+	Non-respected NULs in `str` are passed to `map_f`.
+	NULs returned by map_f are encoded either as UNUL (if `nulTerminate` is set) or a NUL byte otherwise.
+
 	@param str The source string, may not be NULL.
-	@param dst The destination buffer, may be NULL.
+	@param dst The destination buffer, may be NULL to just check the resulting size. The function behaves identical otherwise.
+	@param cap Capacity of `dst` in bytes.
+	@param nulTerminate If true, content written to `dst` is NUL terminated, meaning that NUL characters are over-encoded as UNUL, and a closing NUL terminator is appended.
 	@param map_f The function used to map characters, may not be NULL.
-	@returns The amount of bytes written to dst, including the NUL terminator.
+	@returns The size of the string written to `dst`. The `*exact` flags are set iff. the output was not truncated.
+			 If `nulTerminate` is set, the byte count includes the final NUL terminator, but the char does not.
 */
-extern size_t u8_strmap(const char *str, char *dst, uchar_t (*map_f)(uchar_t));
+extern u8size_t u8_strmap(const char *str, char *dst, size_t cap, bool nulTerminate, uchar_t (*map_f)(uchar_t));
 
-// #endregion u8string.h
+// #endregion u8string.c
 
-// #region u8sized.h
-/** Specified the size of a string.*/
-typedef struct
-{
-	/** If set, `maxBytes` is an exact byte count, and NUL terminators should be treated as regular single byte characters. */
-	bool bytesExact : 1;
-	/** A maximum amount of bytes the string's content spans */
-	size_t maxBytes : 63;
-	/** If set, `maxChars` is an exact character count, and NUL terminators should be treated as regular single byte characters. */
-	bool charsExact : 1;
-	/** A maximum amount of characters the string's content spans */
-	size_t maxChars : 63;
-} u8size_t;
-
-/** A u8size that specifies only a maximum byte size */
-#define MAX_BYTES(n) ((u8size_t){ false, (n), false, (SIZE_MAX >> 1) })
-/** A u8size that specifies only a maximum character count */
-#define MAX_CHARS(n) ((u8size_t){ false, (SIZE_MAX >> 1), false, (n) })
-/** A u8size that specifies an exact byte count */
-#define EXACT_BYTES(n) ((u8size_t){ true, (n), false, (SIZE_MAX >> 1) })
-/** A u8size that specifies an exact character count */
-#define EXACT_CHARS(n) ((u8size_t){ false, (SIZE_MAX >> 1), true, (n) })
-/** A u8size that imposes no size limit, i.e. reads until a NUL byte. */
-#define NUL_TERMINATED ((u8size_t){ false, (SIZE_MAX >> 1), false, (SIZE_MAX >> 1) })
-
+// #region u8sized.c
 
 /** Determines the exact size of a string. Doesn't count a respected NUL terminator.
 
@@ -464,7 +474,7 @@ extern u8size_t u8z_strsize(const char *str, u8size_t size);
 /** Variant of `u8_strlen()` on a sized prefix */
 extern size_t u8z_strlen(const char *str, u8size_t size);
 /** Variant of `u8_strcpy()` on a sized prefix */
-extern size_t u8z_strcpy(const char *str, u8size_t size, char *dst);
+extern u8size_t u8z_strcpy(const char *str, u8size_t size, char *dst, size_t cap, bool nulTerminated);
 /** Variant of `u8_strpos()` within a sized prefix */
 extern const char *u8z_strpos(const char *str, u8size_t size, size_t pos);
 /** Variant of `u8_strat()` within a sized prefix */
@@ -500,15 +510,15 @@ extern bool u8z_streq(const char *a, u8size_t n, const char *b, u8size_t m);
 /** Variant of `u8_streqI()` over sized prefixes */
 extern bool u8z_streqI(const char *a, u8size_t n, const char *b, u8size_t m);
 
-/** Variant of `u8_isnorm` on a sized prefix */
+/** Variant of `u8_isnorm()` on a sized prefix */
 extern bool u8z_isnorm(const char *str, u8size_t size);
 
-/** Variant of `u8_isvalid` on a sized prefix */
+/** Variant of `u8_isvalid()` on a sized prefix */
 extern bool u8z_isvalid(const char *str, u8size_t size);
 
-/** Variant of `u8_strmap` on a sized prefix */
-__nonnull((4))
-extern size_t u8z_strmap(const char *str, u8size_t size, char *dst, uchar_t (*map_f)(uchar_t));
+/** Variant of `u8_strmap()` on a sized prefix */
+__nonnull((6))
+extern u8size_t u8z_strmap(const char *str, u8size_t size, char *dst, size_t cap, bool nulTerminate, uchar_t (*map_f)(uchar_t));
 
-// #endregion u8sized.h
+// #endregion u8sized.c
 #endif
