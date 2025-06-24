@@ -241,8 +241,6 @@ bool u8z_isnorm(const char *str, u8size_t size)
 	SCAN(str, size, {
 		if(!(c == 0 && l == 2) && l != u8enc(c, NULL))
 			return false;
-		if(uchar_class(c) == UCLASS_UNASSIGNED)
-			return false;
 	})
 
 	return true;

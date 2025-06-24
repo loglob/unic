@@ -113,8 +113,9 @@ TEST(isnorm_example)
 	assert(!u8_isnorm(improperNUL));
 	assert(u8_isvalid(improperNUL));
 
+	// well-encoded U+1FFFFF, outside assigned ranges
 	const char *invalid = "foo" "\xF7\xBF\xBF\xBF" "bar";
-	assert(!u8_isnorm(invalid));
+	assert(u8_isnorm(invalid));
 	assert(!u8_isvalid(invalid));
 }
 
