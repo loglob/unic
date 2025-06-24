@@ -432,6 +432,15 @@ __nonnull((1))
 extern bool u8_isnorm(const char *str);
 
 __nonnull((1))
+/** Determines the longest prefix of `str` that is entirely normalized.
+
+	@see u8_isnorm	
+	@returns The size of that prefix, with both exact flags unset.
+			If the string is entirely normalized, returns the size of the string with both exact flags set.	
+*/
+extern u8size_t u8_chknorm(const char *str);
+
+__nonnull((1))
 /** Determines if the given utf-8 encoded string is valid utf-8.
 	This means that the every character in the string is assigned in the unicode standard.
 	Private use characters are considered valid.
@@ -440,6 +449,15 @@ __nonnull((1))
 	@returns str is valid utf-8.
 */
 extern bool u8_isvalid(const char *str);
+
+__nonnull((1))
+/** Determines the longest prefix of `str` that is entirely normalized.
+
+	@see u8_isvalid	
+	@returns The size of that prefix, with both exact flags unset.
+			If the string is entirely valid, returns the size of the string with both exact flags set.	
+*/
+extern u8size_t u8_chkvalid(const char *str);
 
 __nonnull((1,5))
 /** Applies map_f to every character in the utf-8 encoded string and writes them to dst.
@@ -513,8 +531,14 @@ extern bool u8z_streqI(const char *a, u8size_t n, const char *b, u8size_t m);
 /** Variant of `u8_isnorm()` on a sized prefix */
 extern bool u8z_isnorm(const char *str, u8size_t size);
 
+/** Variant of `u8_chknorm()` on a sized prefix */
+extern u8size_t u8z_chknorm(const char *str, u8size_t size);
+
 /** Variant of `u8_isvalid()` on a sized prefix */
 extern bool u8z_isvalid(const char *str, u8size_t size);
+
+/** Variant of `u8_chkvalid()` on a sized prefix */
+extern u8size_t u8z_chkvalid(const char *str, u8size_t size);
 
 /** Variant of `u8_strmap()` on a sized prefix */
 __nonnull((6))

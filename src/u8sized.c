@@ -238,22 +238,39 @@ bool u8z_streqI(const char *a, u8size_t n, const char *b, u8size_t m)
 
 bool u8z_isnorm(const char *str, u8size_t size)
 {
+	return u8z_chknorm(str, size).bytesExact;
+}
+
+u8size_t u8z_chknorm(const char *str, u8size_t size)
+{
+	size_t totalBytes = 0, totalChars = 0;
+
 	SCAN(str, size, {
 		if(!(c == 0 && l == 2) && l != u8enc(c, NULL))
-			return false;
+			return (u8size_t){ .bytesExact = false, .byteCount = byteIx, .charsExact = false, .charCount = charIx };
+
+		totalBytes += l;
+		++totalChars;
 	})
 
-	return true;
+	return (u8size_t){ .bytesExact = true, .byteCount = totalBytes, .charsExact = true, .charCount = totalChars };
 }
 
 bool u8z_isvalid(const char *str, u8size_t size)
 {
+	return u8z_chkvalid(str, size).bytesExact;
+}
+
+u8size_t u8z_chkvalid(const char *str, u8size_t size)
+{
+	size_t totalBytes = 0, totalChars = 0;
+
 	SCAN(str, size, {
 		if(uchar_class(c) == UCLASS_UNASSIGNED)
-			return false;
+			return (u8size_t){ .bytesExact = false, .byteCount = byteIx, .charsExact = false, .charCount = charIx };
 	})
 
-	return true;
+	return (u8size_t){ .bytesExact = true, .byteCount = totalBytes, .charsExact = true, .charCount = totalChars };
 }
 
 u8size_t u8z_strmap(const char *str, u8size_t size, char *dst, size_t cap, bool nulTerminate, uchar_t (*map_f)(uchar_t))

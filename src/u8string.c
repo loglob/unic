@@ -93,6 +93,11 @@ bool u8_isnorm(const char *str)
 	return u8z_isnorm(str, NUL_TERMINATED);
 }
 
+u8size_t u8_chknorm(const char *str)
+{
+	return u8z_chknorm(str, NUL_TERMINATED);
+}
+
 bool u8_isvalid(const char *str)
 {
 	return u8z_isvalid(str, NUL_TERMINATED);
