@@ -1,8 +1,8 @@
 #include "u8text.h"
 #include "unic.h"
-#include <asm-generic/errno-base.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #if _POSIX_SOURCE >= 200112L
 #include <unistd.h>
@@ -14,6 +14,10 @@
 
 /** Number of bytes between each marker */
 #define MARKER_FREQ 2048
+
+/** Allocation grain for `FileList` dynamic array */
+#define FILE_LIST_GRAIN 16
+
 #ifdef __has_builtin
 	#if __has_builtin(__builtin_unreachable)
 		#define UNREACHABLE __builtin_unreachable()
@@ -27,61 +31,124 @@
 /** Simple ordered dynamic array */
 struct FileList 
 {
-	size_t pop, cap;
+	/** Actual number of entries populated in `files` */
+	size_t pop;
+	/** Total capacity of `files` */
+	size_t cap;
+	/** Index of first non-empty string in `files` */
+	size_t firstNonEmpty;
 	struct TextFile **files;
 };
 
-
-
-int txt_cmp(struct TextFile *a, struct TextFile *b)
-{
-	if(a->size.byteCount == 0 && b->size.byteCount == 0)
-		return 
-}
-
-/** 
-	@param lo (Inclusive) low index strictly smaller than `file`
-	@param hi (Exclusive) high index strictly greater than `file`
-	@returns The first index >= `file` (or the capacity) 
+/** Compares two files to sort file lists. Considers all overlapping files to be equal.
+	Empty files precede non-empty files but are only considered equal if the files are pointer-equal.
+	@returns -1 if a < b
+	@returns  0 if a == b
+	@returns +1 if a > b
 */
-struct TextFile *ls_seek(struct ListNode *node, const char *ptr)
-{
-	if(!node || node->from < (size_t)ptr || node->to > (size_t)ptr)
-		return NULL;
+int txt_cmp(struct TextFile *a, struct TextFile *b)
+{	
+	// empty files come before all non-empty files
+	if(a->size.byteCount == 0 && b->size.byteCount == 0)
+	{ // ordering doesn't matter semantically
+		return ((size_t)a < (size_t)b) ? -1 : 
+				((size_t)a > (size_t)b) ? +1 : 0;
+	}
+	else if(a->size.byteCount == 0)
+		return -1;
+	else if(b->size.byteCount == 0)
+		return +1;
 
-	if(node->isLeaf)
-		return node->leaf;
+	const char *aHi = a->bytes + a->size.byteCount;
+	const char *bHi = b->bytes + b->size.byteCount;
 
-	return ls_seek(node->inner.left, ptr) ?: ls_
+	return (aHi <= b->bytes) ? -1 :
+			(a->bytes >= bHi) ? +1 : 0;
 }
+
+
+/** body of _fl_seek binary search
+	@param hi Exclusive
+	@returns The proper index at which to insert `file`
+	@returns `-(index + 1)` if the item is already present at `index`
+*/
+static ssize_t _fl_seekB(struct FileList *list, struct TextFile *file, size_t lo, size_t hi)
+{
+	if(lo >= hi)
+		return lo;
+
+	size_t mid = lo + (hi - lo)/2;
+	int c = txt_cmp(list->files[mid], file);
+
+	return (c < 0) /* [mid] < file */ ? _fl_seekB(list, file, mid + 1, hi)
+		: (c > 0) /* [mid] > file */ ? _fl_seekB(list, file, lo, mid)
+		: /* [mid] == file */ -(mid + 1);
+}
+
+/** Seeks a list for a file. */
+static ssize_t _fl_seek(struct FileList *list, struct TextFile *file)
+{
+	return file->size.byteCount ? _fl_seekB(list, file, list->firstNonEmpty, list->pop) : _fl_seekB(list, file, 0, list->firstNonEmpty);
+}
+
 
 int u8txt_link(struct FileList *list, struct TextFile *file)
 {
-	if(list->lowest >= list->cap)
-	{ // empty
-		assert(list->cap > 0);
-		size_t ix0 = list->cap / 4;
+	// assert capacity
+	if(list->pop == list->cap)
+	{
+		struct TextFile **newBuf = realloc(list->files, sizeof(struct TextFile*) * (list->cap + FILE_LIST_GRAIN));
 
-		list->files[ix0] = file;
-		return 0;
+		if(! newBuf)
+			return -1;
+
+		list->files = newBuf;
+		list->cap += FILE_LIST_GRAIN;
 	}
 
-	size_t ix = ls_seek(list->files, file, list->lowest, list->highest + 1);
+	ssize_t ix = _fl_seek(list, file);
 
-	if(ix <= list->highest && txt_cmp(list->files[ix], file) == 0)
-		return 1;
+	if(ix < 0)
+		return +1;
 
-	if(ix > 0 && !list->files[ix - 1])
-	{ // insert
-		list->files[ix - 1] = file;
-		return 0;
-	}
+	if(file->size.byteCount == 0)
+		++list->firstNonEmpty;
+	
+	memmove(list->files + ix + 1, list->files + ix, sizeof(struct TextFile*) * ( list->pop - ix ));
+	list->files[ix] = file;
 
+	return 0;
 }
 
 bool u8txt_unlink(struct FileList *list, struct TextFile *file)
 {
+	ssize_t si = _fl_seek(list, file);
 
+	if(si >= 0)
+		return false;
+
+	size_t ix = -si - 1;
+
+	if(ix + 1 == list->firstNonEmpty)
+		// we've removed the last empty file
+		--list->firstNonEmpty;
+
+
+	// patch hole
+	memmove(list->files + ix, list->files + ix + 1, list->pop - ix - 1);
+
+	if(list->cap - list->pop >= 2*FILE_LIST_GRAIN)
+	{ // shrink buffer
+		struct TextFile **newBuf = realloc(list->files, (list->cap - FILE_LIST_GRAIN)*sizeof(struct TextFile*));
+
+		if(newBuf)
+		{
+			list->cap -= FILE_LIST_GRAIN;
+			list->files = newBuf;
+		}
+	}
+
+	return true;
 }
 
 #if _POSIX_SOURCE >= 200112L
