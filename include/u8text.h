@@ -5,11 +5,10 @@
 #include "unic.h"
 
 /** An unordered collection of files for backtracking pointers */
-struct FileList;
+typedef struct FileList *u8list_t;
 
 /** Information about a byte location */
-struct Location
-{
+typedef struct {
 	/** 1-based line index (i.e. 1 + # of preceding \n characters) */
 	unsigned line;
 	/** 1-based character index into the current line. */
@@ -24,15 +23,16 @@ struct Location
 		Zero when the pointer was character-aligned.
 	 */
 	unsigned charOff : 2;
-};
+} u8loc_t;
 
-/** Opaque unordered collection of files */
 struct TextFile;
 
-/** Callback function invoked to free the content of a text file before freeing. NULL indicates noop. */
-typedef void (*cleanup_f)(struct TextFile *file);
+/** A handle to a UTF-8 text file */
+typedef struct TextFile *u8file_t;
 
-/** A handle to a created file */
+/** Callback function invoked to free the content of a text file before freeing. NULL indicates noop. */
+typedef void (*cleanup_f)(u8file_t file);
+
 struct TextFile
 {
 	/** Arbitrary userdata tagged onto this file.
@@ -59,32 +59,32 @@ struct TextFile
 	@returns An empty file list
 	@returns NULL and sets errno on malloc failure
 */
-extern struct FileList *u8txt_create();
+extern u8list_t u8txt_create();
 
 /** Destroys a file list
 	@param files A file list. Noop if NULL.
 	@param freeAll If true, also free every contained file
 */
-extern void u8txt_destroy(struct FileList *files, bool freeAll);
+extern void u8txt_destroy(u8list_t files, bool freeAll);
 
 /** Looks up the file containing a character location 
 	@returns That text file
 	@returns NULL if `chr` is not contained in `files`
 */
-extern const struct TextFile *u8txt_fileof(struct FileList *files, const char *chr);
+extern u8file_t u8txt_fileof(u8list_t files, const char *chr);
 
 /** Appends a file to a file list
 	@returns 0 on success
 	@returns 1 if the file is already part of the list
 	@returns -1 and sets errno on internal malloc error
 */
-extern int u8txt_link(struct FileList *list, struct TextFile *file);
+extern int u8txt_link(u8list_t list, u8file_t file);
 
 /** Removes a file from a list
 	@returns true on success
 	@returns false if the file isn't part of a list
 */
-extern bool u8txt_unlink(struct FileList *list, struct TextFile *file);
+extern bool u8txt_unlink(u8list_t list, u8file_t file);
 
 //#endregion
 
@@ -95,7 +95,7 @@ extern bool u8txt_unlink(struct FileList *list, struct TextFile *file);
 	@param fd A file descriptor. Regular files must be positioned at the start of the file.
 	@returns A file containing the entire file referenced by `fd`
 */
-extern struct TextFile *u8txt_open(int fd);
+extern u8file_t u8txt_open(int fd);
 #endif
 
 /** Opens a buffer as a text file and appends it to a file list.
@@ -108,20 +108,20 @@ extern struct TextFile *u8txt_open(int fd);
 	@returns The allocated text file
 	@returns `NULL` and sets `errno` on failure. Does NOT clean up the passed buffer.
 */
-extern struct TextFile *u8txt_load(const char *bytes, size_t size, cleanup_f cleanup);
+extern u8file_t u8txt_load(const char *bytes, size_t size, cleanup_f cleanup);
 
 /** Prefab for passing a malloc()ed buffer to `u8txt_load()` */
-extern void u8txt_cleanup_free(struct TextFile *file);
+extern void u8txt_cleanup_free(u8file_t file);
 
 /** Prefab for passing a mmap()ed buffer to `u8txt_load()`. 
 	Note that `size` must be exactly what was passed to mmap().
  */
-extern void u8txt_cleanup_munmap(struct TextFile *file);
+extern void u8txt_cleanup_munmap(u8file_t file);
 
 /** Frees a file and its content.
 	@note Does NOT touch any file list it's in, may lead to use-after-free
  */
-extern void u8txt_free(struct TextFile *file);
+extern void u8txt_free(u8file_t file);
 
 //#endregion
 
@@ -133,7 +133,7 @@ extern void u8txt_free(struct TextFile *file);
 	@returns A negative number if the location precedes the first byte of the file or the file is empty.
 	@returns A positive number if the location follows after the last byte of the file
 */
-extern int u8txt_loc(struct TextFile *file, const char *chr, struct Location *out_loc);
+extern int u8txt_loc(u8file_t file, const char *chr, u8loc_t *out_loc);
 
 //#region Content Lookup
 
@@ -143,13 +143,13 @@ extern int u8txt_loc(struct TextFile *file, const char *chr, struct Location *ou
 	@param out_size If not NULL, overwritten with the size of the returned string
 	@returns The line with index `line`, or NULL if the line index os out of bounds
 */
-extern const char *u8txt_line(struct TextFile *file, unsigned line, u8size_t *out_size);
+extern const char *u8txt_line(u8file_t file, unsigned line, u8size_t *out_size);
 
 /** Looks up a character by its index
 	@returns A pointer to the first byte of the character at `index`
 	@returns NULL if `index` was out of bounds
 */
-extern const char *u8txt_chr(struct TextFile *file, size_t index);
+extern const char *u8txt_chr(u8file_t file, size_t index);
 
 /** Looks up a line/col location
 	@param line A 1-based line index
@@ -159,7 +159,7 @@ extern const char *u8txt_chr(struct TextFile *file, size_t index);
 	@returns A pointer to the first byte of the character at `index`
 	@returns NULL if the location was out of bounds
 */
-extern const char *u8txt_unLoc(struct TextFile *file, unsigned line, unsigned col, size_t *out_charIndex);
+extern const char *u8txt_unLoc(u8file_t file, unsigned line, unsigned col, size_t *out_charIndex);
 
 //#endregion
 #endif

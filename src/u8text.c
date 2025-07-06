@@ -39,15 +39,15 @@ struct FileList
 	size_t cap;
 	/** Index of first non-empty string in `files` */
 	size_t firstNonEmpty;
-	struct TextFile **files;
+	u8file_t *files;
 };
 
-struct FileList *u8txt_create()
+u8list_t u8txt_create()
 {
 	return calloc(1, sizeof(struct FileList));
 }
 
-void u8txt_destroy(struct FileList *files, bool freeAll)
+void u8txt_destroy(u8list_t files, bool freeAll)
 {
 	if(! files)
 		return;
@@ -65,7 +65,7 @@ void u8txt_destroy(struct FileList *files, bool freeAll)
 	@returns  0 if a == b
 	@returns +1 if a > b
 */
-int txt_cmp(struct TextFile *a, struct TextFile *b)
+int txt_cmp(u8file_t a, u8file_t b)
 {	
 	// empty files come before all non-empty files
 	if(a->size.byteCount == 0 && b->size.byteCount == 0)
@@ -90,7 +90,7 @@ int txt_cmp(struct TextFile *a, struct TextFile *b)
 	@returns The proper index at which to insert `file`
 	@returns `-(index + 1)` if the item is already present at `index`
 */
-static ssize_t _fl_seekB(struct FileList *list, struct TextFile *file, size_t lo, size_t hi)
+static ssize_t _fl_seekB(u8list_t list, u8file_t file, size_t lo, size_t hi)
 {
 	if(lo >= hi)
 		return lo;
@@ -104,14 +104,14 @@ static ssize_t _fl_seekB(struct FileList *list, struct TextFile *file, size_t lo
 }
 
 /** Seeks a list for a file. */
-static ssize_t _fl_seek(struct FileList *list, struct TextFile *file)
+static ssize_t _fl_seek(u8list_t list, u8file_t file)
 {
 	return file->size.byteCount
 			? _fl_seekB(list, file, list->firstNonEmpty, list->pop) 
 			: _fl_seekB(list, file, 0, list->firstNonEmpty);
 }
 
-static ssize_t _fl_seek_ptr(struct FileList *list, const char *ptr, size_t lo, size_t hi)
+static ssize_t _fl_seek_ptr(u8list_t list, const char *ptr, size_t lo, size_t hi)
 {
 	if(lo >= hi)
 		return -(lo + 1);
@@ -124,12 +124,12 @@ static ssize_t _fl_seek_ptr(struct FileList *list, const char *ptr, size_t lo, s
 		: /* [mid] == file */ -(mid + 1);
 }
 
-int u8txt_link(struct FileList *list, struct TextFile *file)
+int u8txt_link(u8list_t list, u8file_t file)
 {
 	// assert capacity
 	if(list->pop == list->cap)
 	{
-		struct TextFile **newBuf = realloc(list->files, sizeof(struct TextFile*) * (list->cap + FILE_LIST_GRAIN));
+		u8file_t *newBuf = realloc(list->files, sizeof(u8file_t) * (list->cap + FILE_LIST_GRAIN));
 
 		if(! newBuf)
 			return -1;
@@ -146,13 +146,13 @@ int u8txt_link(struct FileList *list, struct TextFile *file)
 	if(file->size.byteCount == 0)
 		++list->firstNonEmpty;
 	
-	memmove(list->files + ix + 1, list->files + ix, sizeof(struct TextFile*) * ( list->pop - ix ));
+	memmove(list->files + ix + 1, list->files + ix, sizeof(u8file_t) * ( list->pop - ix ));
 	list->files[ix] = file;
 
 	return 0;
 }
 
-bool u8txt_unlink(struct FileList *list, struct TextFile *file)
+bool u8txt_unlink(u8list_t list, u8file_t file)
 {
 	ssize_t si = _fl_seek(list, file);
 
@@ -171,7 +171,7 @@ bool u8txt_unlink(struct FileList *list, struct TextFile *file)
 
 	if(list->cap - list->pop >= 2*FILE_LIST_GRAIN)
 	{ // shrink buffer
-		struct TextFile **newBuf = realloc(list->files, (list->cap - FILE_LIST_GRAIN)*sizeof(struct TextFile*));
+		u8file_t *newBuf = realloc(list->files, (list->cap - FILE_LIST_GRAIN)*sizeof(u8file_t));
 
 		if(newBuf)
 		{
@@ -183,7 +183,7 @@ bool u8txt_unlink(struct FileList *list, struct TextFile *file)
 	return true;
 }
 
-const struct TextFile *u8txt_fileof(struct FileList *list, const char *chr)
+u8file_t u8txt_fileof(u8list_t list, const char *chr)
 {
 	ssize_t ix = _fl_seek_ptr(list, chr, list->firstNonEmpty, list->pop);
 
@@ -191,7 +191,7 @@ const struct TextFile *u8txt_fileof(struct FileList *list, const char *chr)
 }
 //#endregion
 
-static const struct Location initialLocation = {
+static const u8loc_t initialLocation = {
 	.characterIndex = 0,
 	.charOff = 0,
 	.column = 0,
@@ -204,7 +204,7 @@ static const struct Location initialLocation = {
 	@param size Actual total size of `str`. Must be `>= n` (relevant for interrupted characters)
 	@returns THe location of l0[n]
 */
-static struct Location _loc_move(struct Location l0, const char *str, size_t n, size_t size)
+static u8loc_t _loc_move(u8loc_t l0, const char *str, size_t n, size_t size)
 {
 	assert(n <= size);
 
@@ -247,7 +247,7 @@ static struct Location _loc_move(struct Location l0, const char *str, size_t n, 
 /** Size of a huge page, 2 MiB */
 static const size_t hugePageSize = 2*1024*1024;
 
-struct TextFile *u8txt_open(int fd)
+u8file_t u8txt_open(int fd)
 {
 	struct stat st;
 	if(fstat(fd, &st))
@@ -276,7 +276,7 @@ struct TextFile *u8txt_open(int fd)
 	}
 
 	{
-		struct TextFile *file = u8txt_load(mapping, st.st_size, u8txt_cleanup_munmap);
+		u8file_t file = u8txt_load(mapping, st.st_size, u8txt_cleanup_munmap);
 
 		if(! file)
 			munmap(mapping, st.st_size);
@@ -330,7 +330,7 @@ struct TextFile *u8txt_open(int fd)
 			if(nbuf)
 				buf = nbuf;
 
-			struct TextFile *file = u8txt_load(buf, size, u8txt_cleanup_free);
+			u8file_t file = u8txt_load(buf, size, u8txt_cleanup_free);
 
 			if(! file)
 				free(buf);
@@ -341,16 +341,16 @@ struct TextFile *u8txt_open(int fd)
 }
 #endif
 
-struct TextFile *u8txt_load(const char *bytes, size_t size, cleanup_f cleanup)
+u8file_t u8txt_load(const char *bytes, size_t size, cleanup_f cleanup)
 {
 	size_t nMark = size / MARKER_FREQ;
-	struct TextFile *file = malloc(sizeof(struct TextFile) + nMark * sizeof(struct Location));
+	u8file_t file = malloc(sizeof(struct TextFile) + nMark * sizeof(u8loc_t));
 
 	if(! file)
 		return NULL;
 
-	struct Location *m = (struct Location*)&file->_opaque;
-	struct Location cur = initialLocation;
+	u8loc_t *m = (u8loc_t*)&file->_opaque;
+	u8loc_t cur = initialLocation;
 
 	// create markers
 	for(size_t i = 0; i < nMark; ++i)
@@ -360,7 +360,7 @@ struct TextFile *u8txt_load(const char *bytes, size_t size, cleanup_f cleanup)
 	}
 
 	size_t leftover = size - nMark*MARKER_FREQ;
-	struct Location last = _loc_move(cur, bytes + nMark*MARKER_FREQ, leftover, leftover);
+	u8loc_t last = _loc_move(cur, bytes + nMark*MARKER_FREQ, leftover, leftover);
 
 	u8size_t siz = (u8size_t) {
 		.bytesExact = true,
@@ -383,19 +383,19 @@ struct TextFile *u8txt_load(const char *bytes, size_t size, cleanup_f cleanup)
 	return file;
 }
 
-void u8txt_cleanup_free(struct TextFile *file)
+void u8txt_cleanup_free(u8file_t file)
 {
 	free((char*)file->bytes);
 }
 
-void u8txt_cleanup_munmap(struct TextFile *file)
+void u8txt_cleanup_munmap(u8file_t file)
 {
 	munmap( (char*)file->bytes, file->size.byteCount );
 }
 //#endregion
 
 
-int u8txt_loc(struct TextFile *file, const char *chr, struct Location *out_loc)
+int u8txt_loc(u8file_t file, const char *chr, u8loc_t *out_loc)
 {
 	if(file->size.byteCount == 0)
 		return -1;
@@ -410,7 +410,7 @@ int u8txt_loc(struct TextFile *file, const char *chr, struct Location *out_loc)
 	size_t off = chr - file->bytes;
 	// look up marker
 	size_t mi = off / MARKER_FREQ;
-	struct Location marker = mi ? ((struct Location*)(file->_opaque))[mi - 1] : initialLocation;
+	u8loc_t marker = mi ? ((u8loc_t*)(file->_opaque))[mi - 1] : initialLocation;
 	size_t mOff = mi * MARKER_FREQ;
 
 	*out_loc = _loc_move(marker, file->bytes + mOff, off - mOff, file->size.byteCount - mOff);
@@ -425,12 +425,12 @@ int u8txt_loc(struct TextFile *file, const char *chr, struct Location *out_loc)
 	@param out_chr Unless NULL, overwritten with the decoded character
 	@returns The encoded size of the target character
 */
-inline static size_t u8txt_dec(struct TextFile *file, const char *chr, uchar_t *out_chr)
+inline static size_t u8txt_dec(u8file_t file, const char *chr, uchar_t *out_chr)
 {
 	return u8ndec(chr, file->size.byteCount - (chr - file->bytes), out_chr);
 }
 
-const char *u8txt_line(struct TextFile *file, unsigned line, u8size_t *out_size)
+const char *u8txt_line(u8file_t file, unsigned line, u8size_t *out_size)
 {
 	if(line <= 0 || line > file->lines)
 		return NULL;
@@ -483,13 +483,13 @@ const char *u8txt_line(struct TextFile *file, unsigned line, u8size_t *out_size)
 /** Binary search for the last marker before a character index
 	@param hi inclusive 
  */
-static size_t _seek_chr(const struct Location *markers, size_t chrIx, size_t lo, size_t hi)
+static size_t _seek_chr(const u8loc_t *markers, size_t chrIx, size_t lo, size_t hi)
 {
 	if(lo >= hi)
 		return lo;
 
 	size_t mid = lo + (hi - lo)/2;
-	struct Location midM = mid ? markers[mid] : initialLocation;
+	u8loc_t midM = mid ? markers[mid] : initialLocation;
 
 	if(midM.characterIndex > chrIx) // [0] guaranteed to be 0
 		return _seek_chr(markers, chrIx, lo, mid - 1);
@@ -500,7 +500,7 @@ static size_t _seek_chr(const struct Location *markers, size_t chrIx, size_t lo,
 		return _seek_chr(markers, chrIx, mid, hi);
 }
 
-const char *u8txt_chr(struct TextFile *file, size_t index)
+const char *u8txt_chr(u8file_t file, size_t index)
 {
 	if(index >= file->size.charCount)
 		return NULL;
@@ -508,10 +508,10 @@ const char *u8txt_chr(struct TextFile *file, size_t index)
 	// possible range of byte offsets corresponding to `chrIx`
 	size_t bMin = index, bMax = index * UTF8_MAX;
 	
-	struct Location *m = (struct Location*)file->_opaque;
+	u8loc_t *m = (u8loc_t*)file->_opaque;
 	size_t i = _seek_chr(m, index, bMin/MARKER_FREQ, bMax/MARKER_FREQ);
 
-	struct Location prec = i ? m[i - 1] : initialLocation;
+	u8loc_t prec = i ? m[i - 1] : initialLocation;
 	size_t off = i*MARKER_FREQ;
 
 	if(prec.charOff)
