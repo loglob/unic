@@ -155,10 +155,11 @@ extern const char *u8txt_chr(struct TextFile *file, size_t index);
 	@param line A 1-based line index
 	@param col A 1-based column index within that line.
 				The final newline character is not considered to be within line bounds.
+	@param out_charIndex Unless NULL, overwritten with the equivalent total character offset of the result on success.
 	@returns A pointer to the first byte of the character at `index`
 	@returns NULL if the location was out of bounds
 */
-extern const char *u8txt_unLoc(struct TextFile *file, unsigned line, unsigned col);
+extern const char *u8txt_unLoc(struct TextFile *file, unsigned line, unsigned col, size_t *out_charIndex);
 
 //#endregion
 #endif

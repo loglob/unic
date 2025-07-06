@@ -417,3 +417,97 @@ extern int u8txt_loc(struct TextFile *file, const char *chr, struct Location *ou
 
 	return 0;
 }
+
+//#region Content Lookup
+const char *u8txt_line(struct TextFile *file, unsigned line, u8size_t *out_size)
+{
+	if(line <= 0 || line > file->lines)
+		return NULL;
+
+	const char *start;
+	size_t startIndex; // character index of `start`
+	
+	if(line == 1)
+	{
+		start = file->bytes;
+		startIndex = 0;
+	}
+	else
+	{
+		// seek for starting \n, then skip (in case line is empty)
+		start = u8txt_unLoc(file, line, 0, &startIndex);
+		assert(start);
+		start += u8ndec(start, file->size.byteCount - (start - file->bytes), NULL);
+		++startIndex;
+	}
+
+	if(out_size)
+	{
+		if(line == file->lines)
+		{ // is final line
+			*out_size = (u8size_t) {
+				.byteCount = file->size.byteCount - (start - file->bytes),
+				.bytesExact = true,
+				.charCount = file->size.charCount - startIndex,
+				.charsExact = true
+			};
+		}
+		else
+		{
+			size_t endIndex;
+			const char *end = u8txt_unLoc(file, line + 1, 0, &endIndex);
+
+			*out_size = (u8size_t) {
+				.byteCount = end - start,
+				.bytesExact = true,
+				.charCount = endIndex - startIndex,
+				.charsExact = true
+			};
+		}
+	}
+
+	return start;
+}
+
+/** Binary search for the last marker before a character index
+	@param hi inclusive 
+ */
+static size_t _seek_chr(const struct Location *markers, size_t chrIx, size_t lo, size_t hi)
+{
+	if(lo >= hi)
+		return lo;
+
+	size_t mid = lo + (hi - lo)/2;
+	struct Location midM = mid ? markers[mid] : initialLocation;
+
+	if(midM.characterIndex > chrIx) // [0] guaranteed to be 0
+		return _seek_chr(markers, chrIx, lo, mid - 1);
+	// mid <= chrIx
+	else if(midM.characterIndex + MARKER_FREQ/UTF8_MAX >= chrIx)
+		return mid; // stop early if chrIx definitely in pivot range (i.e. ==)
+	else
+		return _seek_chr(markers, chrIx, mid, hi);
+}
+
+const char *u8txt_chr(struct TextFile *file, size_t index)
+{
+	if(index >= file->size.charCount)
+		return NULL;
+
+	// possible range of byte offsets corresponding to `chrIx`
+	size_t bMin = index, bMax = index * UTF8_MAX;
+	
+	struct Location *m = (struct Location*)file->_opaque;
+	size_t i = _seek_chr(m, index, bMin/MARKER_FREQ, bMax/MARKER_FREQ);
+
+	struct Location prec = i ? m[i - 1] : initialLocation;
+	size_t off = i*MARKER_FREQ;
+
+	if(prec.charOff)
+		off -= prec.charOff;
+
+	return u8z_strpos(file->bytes + off, EXACT_BYTES(file->size.byteCount - off), index - prec.characterIndex);
+}
+
+
+//#endregion
