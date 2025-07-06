@@ -395,7 +395,7 @@ void u8txt_cleanup_munmap(struct TextFile *file)
 //#endregion
 
 
-extern int u8txt_loc(struct TextFile *file, const char *chr, struct Location *out_loc)
+int u8txt_loc(struct TextFile *file, const char *chr, struct Location *out_loc)
 {
 	if(file->size.byteCount == 0)
 		return -1;
@@ -419,6 +419,17 @@ extern int u8txt_loc(struct TextFile *file, const char *chr, struct Location *ou
 }
 
 //#region Content Lookup
+/** Shorthand for decoding a single unicode character from a text file.
+	@see `u8dec()`
+	@param chr Points to the start of the target character
+	@param out_chr Unless NULL, overwritten with the decoded character
+	@returns The encoded size of the target character
+*/
+inline static size_t u8txt_dec(struct TextFile *file, const char *chr, uchar_t *out_chr)
+{
+	return u8ndec(chr, file->size.byteCount - (chr - file->bytes), out_chr);
+}
+
 const char *u8txt_line(struct TextFile *file, unsigned line, u8size_t *out_size)
 {
 	if(line <= 0 || line > file->lines)
@@ -437,7 +448,7 @@ const char *u8txt_line(struct TextFile *file, unsigned line, u8size_t *out_size)
 		// seek for starting \n, then skip (in case line is empty)
 		start = u8txt_unLoc(file, line, 0, &startIndex);
 		assert(start);
-		start += u8ndec(start, file->size.byteCount - (start - file->bytes), NULL);
+		start += u8txt_dec(file, start, NULL);
 		++startIndex;
 	}
 
