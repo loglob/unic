@@ -19,7 +19,8 @@ struct Location
 	*/
 	size_t characterIndex : 62;
 	/** Amount of bytes the pointer was offset from the start of a character.
-		i.e. offset you need to add to reach the next character.
+		i.e. number of preceding bytes that were part of the same character
+		i.e. index of this byte in the current character
 		Zero when the pointer was character-aligned.
 	 */
 	unsigned charOff : 2;
@@ -129,7 +130,7 @@ extern void u8txt_free(struct TextFile *file);
 	@param chr A pointer to the start of the character to locate
 	@param out_loc If not NULL, overwritten with the location of `chr`
 	@returns 0 and overwrites `out_loc` if the location is found within `file`
-	@returns A negative number if the location precedes the first byte of the file
+	@returns A negative number if the location precedes the first byte of the file or the file is empty.
 	@returns A positive number if the location follows after the last byte of the file
 */
 extern int u8txt_loc(struct TextFile *file, const char *chr, struct Location *out_loc);

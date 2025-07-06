@@ -1,6 +1,7 @@
 #include "u8text.h"
 #include "unic.h"
 #include <assert.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -28,6 +29,7 @@
 	#define UNUNREACHABLE
 #endif
 
+//#region File List Interface
 /** Simple ordered dynamic array */
 struct FileList 
 {
@@ -39,6 +41,23 @@ struct FileList
 	size_t firstNonEmpty;
 	struct TextFile **files;
 };
+
+struct FileList *u8txt_create()
+{
+	return calloc(1, sizeof(struct FileList));
+}
+
+void u8txt_destroy(struct FileList *files, bool freeAll)
+{
+	if(! files)
+		return;
+
+	if(freeAll) for(size_t i = 0; i < files->pop; ++i)
+		u8txt_free(files->files[i]);
+
+	free(files->files);
+	free(files);
+}
 
 /** Compares two files to sort file lists. Considers all overlapping files to be equal.
 	Empty files precede non-empty files but are only considered equal if the files are pointer-equal.
@@ -66,7 +85,6 @@ int txt_cmp(struct TextFile *a, struct TextFile *b)
 			(a->bytes >= bHi) ? +1 : 0;
 }
 
-
 /** body of _fl_seek binary search
 	@param hi Exclusive
 	@returns The proper index at which to insert `file`
@@ -88,9 +106,23 @@ static ssize_t _fl_seekB(struct FileList *list, struct TextFile *file, size_t lo
 /** Seeks a list for a file. */
 static ssize_t _fl_seek(struct FileList *list, struct TextFile *file)
 {
-	return file->size.byteCount ? _fl_seekB(list, file, list->firstNonEmpty, list->pop) : _fl_seekB(list, file, 0, list->firstNonEmpty);
+	return file->size.byteCount
+			? _fl_seekB(list, file, list->firstNonEmpty, list->pop) 
+			: _fl_seekB(list, file, 0, list->firstNonEmpty);
 }
 
+static ssize_t _fl_seek_ptr(struct FileList *list, const char *ptr, size_t lo, size_t hi)
+{
+	if(lo >= hi)
+		return -(lo + 1);
+
+	size_t mid = lo + (hi - lo)/2;
+	int c = u8txt_loc(list->files[mid], ptr, NULL);
+
+	return (c < 0) /* [mid] < ptr */ ? _fl_seek_ptr(list, ptr, mid + 1, hi)
+		: (c > 0) /* [mid] > ptr */ ? _fl_seek_ptr(list, ptr, lo, mid)
+		: /* [mid] == file */ -(mid + 1);
+}
 
 int u8txt_link(struct FileList *list, struct TextFile *file)
 {
@@ -150,6 +182,66 @@ bool u8txt_unlink(struct FileList *list, struct TextFile *file)
 
 	return true;
 }
+
+const struct TextFile *u8txt_fileof(struct FileList *list, const char *chr)
+{
+	ssize_t ix = _fl_seek_ptr(list, chr, list->firstNonEmpty, list->pop);
+
+	return ix < 0 ? NULL : list->files[ix];
+}
+//#endregion
+
+static const struct Location initialLocation = {
+	.characterIndex = 0,
+	.charOff = 0,
+	.column = 0,
+	.line = 1
+};
+
+/** Computes a location after moving further along the string
+	@param l0 The initial location of str[0]
+	@param n Number of bytes to consume
+	@param size Actual total size of `str`. Must be `>= n` (relevant for interrupted characters)
+	@returns THe location of l0[n]
+*/
+static struct Location _loc_move(struct Location l0, const char *str, size_t n, size_t size)
+{
+	assert(n <= size);
+
+	// correct for character offset
+	if(l0.charOff)
+	{
+		str -= l0.charOff; // must be bound-safe by construction of markers
+		n += l0.charOff;
+		size += l0.charOff;
+		l0.charOff = 0;
+	}
+
+	for(size_t i = 0;;)
+	{
+		uchar_t c;
+		size_t l = u8ndec(str + i, size - i, &c);
+
+		i += l;
+		++l0.characterIndex;
+
+		if(c == '\n')
+		{
+			++l0.line;
+			l0.column = 0;
+		}
+		else
+			++l0.column;
+
+		if(n <= i)
+		{
+			l0.charOff = (n < i) ? n - (i - l) : 0;
+			return l0;
+		}
+	}
+}
+
+//#region file init/free
 
 #if _POSIX_SOURCE >= 200112L
 /** Size of a huge page, 2 MiB */
@@ -258,45 +350,23 @@ struct TextFile *u8txt_load(const char *bytes, size_t size, cleanup_f cleanup)
 		return NULL;
 
 	struct Location *m = (struct Location*)&file->_opaque;
+	struct Location cur = initialLocation;
 
 	// create markers
-	size_t chr = 0;
-	size_t markIx = 0;
-	unsigned col = 0;
-	unsigned line = 1;
-
-	for(size_t off = 0; off < size && markIx < nMark;)
+	for(size_t i = 0; i < nMark; ++i)
 	{
-		uchar_t c;
-		off += u8ndec(bytes + off, size - off, &c);
-		++chr;
-
-		if(c == '\n')
-		{
-			++line;
-			col = 0;
-		}
-		else
-			++col;
-
-		const size_t nextMark = (markIx + 1) * MARKER_FREQ;
-
-		if(off >= nextMark)
-		{
-			m[markIx++] = (struct Location) {
-				.characterIndex = chr,
-				.charOff = off - nextMark,
-				.column = col,
-				.line = line
-			};
-		}
+		size_t o = i * MARKER_FREQ;
+		m[i] = cur = _loc_move(cur, bytes + o, MARKER_FREQ, size - o);
 	}
+
+	size_t leftover = size - nMark*MARKER_FREQ;
+	struct Location last = _loc_move(cur, bytes + nMark*MARKER_FREQ, leftover, leftover);
 
 	u8size_t siz = (u8size_t) {
 		.bytesExact = true,
 		.byteCount = size,
 		.charsExact = true,
-		.charCount = chr
+		.charCount = last.characterIndex
 	};
 
 	// Magic L-expression to overwrite a const-marked field
@@ -305,7 +375,7 @@ struct TextFile *u8txt_load(const char *bytes, size_t size, cleanup_f cleanup)
 	file->udata = NULL;
 	SET_FIELD(file->bytes) = bytes;
 	SET_FIELD(file->size) = siz;
-	SET_FIELD(file->lines) = line;
+	SET_FIELD(file->lines) = last.line;
 	SET_FIELD(file->cleanupCallback) = cleanup;
 
 	#undef SET_FIELD
@@ -313,5 +383,37 @@ struct TextFile *u8txt_load(const char *bytes, size_t size, cleanup_f cleanup)
 	return file;
 }
 
+void u8txt_cleanup_free(struct TextFile *file)
+{
+	free((char*)file->bytes);
+}
+
+void u8txt_cleanup_munmap(struct TextFile *file)
+{
+	munmap( (char*)file->bytes, file->size.byteCount );
+}
+//#endregion
 
 
+extern int u8txt_loc(struct TextFile *file, const char *chr, struct Location *out_loc)
+{
+	if(file->size.byteCount == 0)
+		return -1;
+	if((size_t)chr < (size_t)file->bytes)
+		return -1;
+	if((size_t)chr >= (size_t)file->bytes + file->size.byteCount)
+		return +1;
+
+	if(! out_loc)
+		return 0;
+
+	size_t off = chr - file->bytes;
+	// look up marker
+	size_t mi = off / MARKER_FREQ;
+	struct Location marker = mi ? ((struct Location*)(file->_opaque))[mi - 1] : initialLocation;
+	size_t mOff = mi * MARKER_FREQ;
+
+	*out_loc = _loc_move(marker, file->bytes + mOff, off - mOff, file->size.byteCount - mOff);
+
+	return 0;
+}
