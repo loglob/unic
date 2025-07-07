@@ -65,7 +65,7 @@ void u8txt_destroy(u8list_t files, bool freeAll)
 	@returns  0 if a == b
 	@returns +1 if a > b
 */
-int txt_cmp(u8file_t a, u8file_t b)
+static int _txt_cmp(u8file_t a, u8file_t b)
 {	
 	// empty files come before all non-empty files
 	if(a->size.byteCount == 0 && b->size.byteCount == 0)
@@ -96,7 +96,7 @@ static ssize_t _fl_seekB(u8list_t list, u8file_t file, size_t lo, size_t hi)
 		return lo;
 
 	size_t mid = lo + (hi - lo)/2;
-	int c = txt_cmp(list->files[mid], file);
+	int c = _txt_cmp(list->files[mid], file);
 
 	return (c < 0) /* [mid] < file */ ? _fl_seekB(list, file, mid + 1, hi)
 		: (c > 0) /* [mid] > file */ ? _fl_seekB(list, file, lo, mid)
@@ -198,6 +198,21 @@ static const u8loc_t initialLocation = {
 	.line = 1
 };
 
+static inline u8loc_t _loc_incr(u8loc_t l0, uchar_t chr)
+{
+	++l0.characterIndex;
+
+	if(chr == '\n')
+	{
+		++l0.line;
+		l0.column = 0;
+	}
+	else
+		++l0.column;
+
+	return l0;
+}
+
 /** Computes a location after moving further along the string
 	@param l0 The initial location of str[0]
 	@param n Number of bytes to consume
@@ -223,15 +238,7 @@ static u8loc_t _loc_move(u8loc_t l0, const char *str, size_t n, size_t size)
 		size_t l = u8ndec(str + i, size - i, &c);
 
 		i += l;
-		++l0.characterIndex;
-
-		if(c == '\n')
-		{
-			++l0.line;
-			l0.column = 0;
-		}
-		else
-			++l0.column;
+		l0 = _loc_incr(l0, c);
 
 		if(n <= i)
 		{
@@ -394,6 +401,15 @@ void u8txt_cleanup_munmap(u8file_t file)
 }
 //#endregion
 
+static inline u8loc_t *_getMarkers(u8file_t file)
+{
+	return (u8loc_t*)&file->_opaque;
+}
+
+static inline u8loc_t _getMarker(u8loc_t *array, size_t ix)
+{
+	return ix ? array[ix - 1] : initialLocation;
+}
 
 int u8txt_loc(u8file_t file, const char *chr, u8loc_t *out_loc)
 {
@@ -410,7 +426,7 @@ int u8txt_loc(u8file_t file, const char *chr, u8loc_t *out_loc)
 	size_t off = chr - file->bytes;
 	// look up marker
 	size_t mi = off / MARKER_FREQ;
-	u8loc_t marker = mi ? ((u8loc_t*)(file->_opaque))[mi - 1] : initialLocation;
+	u8loc_t marker = _getMarker(_getMarkers(file), mi);
 	size_t mOff = mi * MARKER_FREQ;
 
 	*out_loc = _loc_move(marker, file->bytes + mOff, off - mOff, file->size.byteCount - mOff);
@@ -480,24 +496,51 @@ const char *u8txt_line(u8file_t file, unsigned line, u8size_t *out_size)
 	return start;
 }
 
-/** Binary search for the last marker before a character index
-	@param hi inclusive 
- */
-static size_t _seek_chr(const u8loc_t *markers, size_t chrIx, size_t lo, size_t hi)
+/** A STRICTLY MONOTONE order over locations.
+	Must return true on `initialLocation`.
+	If `f(x)` is false, every location past `x` must also return false.
+	@returns a negative if `loc < target`
+	@returns 0 if `loc == target`
+	@returns a positive if `loc > target` 
+*/
+typedef int (*loc_cmp_f)( u8loc_t loc, const void *udata );
+
+/** Seeks for a marker
+	@param lo Inclusive virtual marker index
+	@param hi Inclusive virtual marker index
+	@param udata Closure context for `f`
+	@returns The index of the last marker <= the target
+*/
+static inline size_t _seek_marker(const u8loc_t *markers, size_t lo, size_t hi, const void *udata, loc_cmp_f f)
 {
-	if(lo >= hi)
-		return lo;
+	while(lo < hi)
+	{
+		size_t mid = lo + (hi - lo)/2 + (hi - lo)%2; // ceil
+		int cmp = f(mid ? markers[mid - 1] : initialLocation, udata);
 
-	size_t mid = lo + (hi - lo)/2;
-	u8loc_t midM = mid ? markers[mid] : initialLocation;
+		if(cmp < 0)
+			lo = mid;
+		else if(cmp > 0)
+			hi = mid - 1;
+		else
+			return mid;
+	}
 
-	if(midM.characterIndex > chrIx) // [0] guaranteed to be 0
-		return _seek_chr(markers, chrIx, lo, mid - 1);
-	// mid <= chrIx
-	else if(midM.characterIndex + MARKER_FREQ/UTF8_MAX >= chrIx)
-		return mid; // stop early if chrIx definitely in pivot range (i.e. ==)
+	assert(lo >= 0);
+
+	return lo;
+}
+
+static int _loc_cmp_ix(u8loc_t m, const void *udata)
+{
+	size_t targetIx = (size_t)udata;
+
+	if(m.characterIndex > targetIx)
+		return +1;
+	else if(m.characterIndex + MARKER_FREQ/UTF8_MAX >= targetIx)
+		return 0;
 	else
-		return _seek_chr(markers, chrIx, mid, hi);
+		return -1;
 }
 
 const char *u8txt_chr(u8file_t file, size_t index)
@@ -508,10 +551,10 @@ const char *u8txt_chr(u8file_t file, size_t index)
 	// possible range of byte offsets corresponding to `chrIx`
 	size_t bMin = index, bMax = index * UTF8_MAX;
 	
-	u8loc_t *m = (u8loc_t*)file->_opaque;
-	size_t i = _seek_chr(m, index, bMin/MARKER_FREQ, bMax/MARKER_FREQ);
+	u8loc_t *m = _getMarkers(file);
+	size_t i = _seek_marker(m, bMin/MARKER_FREQ, bMax/MARKER_FREQ, (void*)index, _loc_cmp_ix);
 
-	u8loc_t prec = i ? m[i - 1] : initialLocation;
+	u8loc_t prec = _getMarker(m, i);
 	size_t off = i*MARKER_FREQ;
 
 	if(prec.charOff)
@@ -520,5 +563,62 @@ const char *u8txt_chr(u8file_t file, size_t index)
 	return u8z_strpos(file->bytes + off, EXACT_BYTES(file->size.byteCount - off), index - prec.characterIndex);
 }
 
+static int _loc_cmp_loc(u8loc_t loc, const void *udata)
+{
+	const unsigned *want = udata;
+
+	if(loc.line < want[0])
+		return -1;
+	if(loc.line > want[0])
+		return +1;
+
+	if(loc.column <= want[1])
+		return -1;
+	else
+		return +1;
+}
+
+const char *u8txt_unLoc(u8file_t file, unsigned line, unsigned col, size_t *out_charIndex)
+{
+	if(line <= 0 || line > file->lines)
+		return NULL;
+
+	unsigned want[2] = { line, col };
+	u8loc_t *markers = _getMarkers(file);
+	size_t mIx = _seek_marker(markers, 0, file->size.byteCount / MARKER_FREQ, want, _loc_cmp_loc);
+	u8loc_t loc = _getMarker(markers, mIx);
+
+	size_t ix = mIx * MARKER_FREQ;
+	size_t z = file->size.byteCount;
+
+	if(loc.charOff)
+	{
+		ix -= loc.charOff;
+		z += loc.charOff;
+		loc.charOff = 0;
+	}
+
+	while(loc.line <= line)
+	{
+		if(loc.line == line && loc.column == col)
+		{
+			if(out_charIndex)
+				*out_charIndex = loc.characterIndex;
+
+			return file->bytes + ix;
+		}
+
+		if(ix >= z)
+			break;
+
+		uchar_t c;
+		size_t l = u8ndec(file->bytes + ix, z, &c);
+
+		loc = _loc_incr(loc, c);
+		ix += l;
+	}
+
+	return NULL;
+}
 
 //#endregion
