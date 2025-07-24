@@ -59,6 +59,39 @@ void u8txt_destroy(u8list_t files, bool freeAll)
 	free(files);
 }
 
+/** Generic binary search over indices
+	@param lo INCLUSIVE lower bound
+	@param hi INCLUSIVE upper bound
+	@param list Clojure context for `ord`
+	@param target closure context for `ord`
+	@param ord monotone ordering function. 
+			Returns a negative if `ix < target`, positive of `ix > target` and 0 if `ix` is an exact match
+	@returns The index (>= 0) of an exact match
+	@returns `-(x + 1)` where `x` is the smallest index > the target, or `x = hi+1` if all elements were smaller
+*/
+static inline ssize_t _bseek(size_t lo, size_t hi, void *list, void *target, int (*ord)(size_t ix, void *list, void *target))
+{
+	size_t supremum = hi + 1;
+
+	while(lo <= hi)
+	{
+		size_t mid = lo + (hi - lo)/2 + (hi - lo)%2;
+		int cmp = ord(mid, list, target);
+
+		if(cmp < 0)
+			lo = mid + 1;
+		else if(cmp > 0)
+		{
+			supremum = mid;
+			hi = mid - 1;
+		}
+		else
+			return mid;
+	}
+	
+	return -(supremum + 1);
+}
+
 /** Compares two files to sort file lists. Considers all overlapping files to be equal.
 	Empty files precede non-empty files but are only considered equal if the files are pointer-equal.
 	@returns -1 if a < b
@@ -69,7 +102,7 @@ static int _txt_cmp(u8file_t a, u8file_t b)
 {	
 	// empty files come before all non-empty files
 	if(a->size.byteCount == 0 && b->size.byteCount == 0)
-	{ // ordering doesn't matter semantically
+	{ // ordering doesn't really matter, only has to be total
 		return ((size_t)a < (size_t)b) ? -1 : 
 				((size_t)a > (size_t)b) ? +1 : 0;
 	}
@@ -85,43 +118,30 @@ static int _txt_cmp(u8file_t a, u8file_t b)
 			(a->bytes >= bHi) ? +1 : 0;
 }
 
-/** body of _fl_seek binary search
-	@param hi Exclusive
-	@returns The proper index at which to insert `file`
-	@returns `-(index + 1)` if the item is already present at `index`
-*/
-static ssize_t _fl_seekB(u8list_t list, u8file_t file, size_t lo, size_t hi)
+struct _list_ord_file_ctx
 {
-	if(lo >= hi)
-		return lo;
+	u8list_t list;
+	u8file_t file;
+};
 
-	size_t mid = lo + (hi - lo)/2;
-	int c = _txt_cmp(list->files[mid], file);
+/** ord function suited for `_bseek()` */
+static int _list_ord_file(size_t ix, void *_list, void *_file)
+{
+	u8list_t list = _list;
+	u8file_t file = _file;
 
-	return (c < 0) /* [mid] < file */ ? _fl_seekB(list, file, mid + 1, hi)
-		: (c > 0) /* [mid] > file */ ? _fl_seekB(list, file, lo, mid)
-		: /* [mid] == file */ -(mid + 1);
+	u8file_t entry = list->files[ix];
+	return _txt_cmp(entry, file);
 }
 
-/** Seeks a list for a file. */
+/** Prefab for `_bseek()`ing for a file 
+	@return See `_bseek()`
+*/
 static ssize_t _fl_seek(u8list_t list, u8file_t file)
 {
-	return file->size.byteCount
-			? _fl_seekB(list, file, list->firstNonEmpty, list->pop) 
-			: _fl_seekB(list, file, 0, list->firstNonEmpty);
-}
-
-static ssize_t _fl_seek_ptr(u8list_t list, const char *ptr, size_t lo, size_t hi)
-{
-	if(lo >= hi)
-		return -(lo + 1);
-
-	size_t mid = lo + (hi - lo)/2;
-	int c = u8txt_loc(list->files[mid], ptr, NULL);
-
-	return (c < 0) /* [mid] < ptr */ ? _fl_seek_ptr(list, ptr, mid + 1, hi)
-		: (c > 0) /* [mid] > ptr */ ? _fl_seek_ptr(list, ptr, lo, mid)
-		: /* [mid] == file */ -(mid + 1);
+	return file->size.byteCount 
+		? (list->pop ? _bseek(list->firstNonEmpty, list->pop - 1, list, file, _list_ord_file) : 0)
+		: (list->firstNonEmpty ? _bseek(0, list->firstNonEmpty - 1, list, file, _list_ord_file) : 0);
 }
 
 int u8txt_link(u8list_t list, u8file_t file)
@@ -140,34 +160,33 @@ int u8txt_link(u8list_t list, u8file_t file)
 
 	ssize_t ix = _fl_seek(list, file);
 
-	if(ix < 0)
+	if(ix >= 0)
 		return +1;
 
 	if(file->size.byteCount == 0)
 		++list->firstNonEmpty;
-	
+
+	ix = -(ix + 1);
 	memmove(list->files + ix + 1, list->files + ix, sizeof(u8file_t) * ( list->pop - ix ));
 	list->files[ix] = file;
+	++list->pop;
 
 	return 0;
 }
 
 bool u8txt_unlink(u8list_t list, u8file_t file)
 {
-	ssize_t si = _fl_seek(list, file);
+	ssize_t ix = _fl_seek(list, file);
 
-	if(si >= 0)
+	if(ix < 0)
 		return false;
 
-	size_t ix = -si - 1;
-
-	if(ix + 1 == list->firstNonEmpty)
-		// we've removed the last empty file
+	if(file->size.byteCount == 0)
 		--list->firstNonEmpty;
-
-
+	
 	// patch hole
 	memmove(list->files + ix, list->files + ix + 1, list->pop - ix - 1);
+	--list->pop;
 
 	if(list->cap - list->pop >= 2*FILE_LIST_GRAIN)
 	{ // shrink buffer
@@ -185,9 +204,26 @@ bool u8txt_unlink(u8list_t list, u8file_t file)
 
 u8file_t u8txt_fileof(u8list_t list, const char *chr)
 {
-	ssize_t ix = _fl_seek_ptr(list, chr, list->firstNonEmpty, list->pop);
+	if(! list->pop)
+		return NULL; // avoid underflow
 
-	return ix < 0 ? NULL : list->files[ix];
+	size_t lo = list->firstNonEmpty;
+	size_t hi = list->pop - 1; // inclusive
+	
+	while(lo <= hi)
+	{
+		size_t mid = lo + (hi - lo)/2;
+		int c = u8txt_loc(list->files[mid], chr, NULL);
+
+		if(c < 0)
+			lo = mid + 1;
+		else if(c > 0)
+			hi = mid - 1;
+		else
+			return list->files[mid];
+	}
+
+	return NULL;
 }
 //#endregion
 
@@ -197,6 +233,18 @@ static const u8loc_t initialLocation = {
 	.column = 0,
 	.line = 1
 };
+
+//#region Helper Functions
+
+static inline u8loc_t *_getMarkers(u8file_t file)
+{
+	return (u8loc_t*)&file->_opaque;
+}
+
+static inline u8loc_t _getMarker(u8loc_t *array, size_t ix)
+{
+	return ix ? array[ix - 1] : initialLocation;
+}
 
 static inline u8loc_t _loc_incr(u8loc_t l0, uchar_t chr)
 {
@@ -247,6 +295,7 @@ static u8loc_t _loc_move(u8loc_t l0, const char *str, size_t n, size_t size)
 		}
 	}
 }
+//#endregion
 
 //#region file init/free
 
@@ -399,17 +448,14 @@ void u8txt_cleanup_munmap(u8file_t file)
 {
 	munmap( (char*)file->bytes, file->size.byteCount );
 }
+
+void u8txt_free(u8file_t file)
+{
+	file->cleanupCallback(file);
+	free(file);
+}
 //#endregion
 
-static inline u8loc_t *_getMarkers(u8file_t file)
-{
-	return (u8loc_t*)&file->_opaque;
-}
-
-static inline u8loc_t _getMarker(u8loc_t *array, size_t ix)
-{
-	return ix ? array[ix - 1] : initialLocation;
-}
 
 int u8txt_loc(u8file_t file, const char *chr, u8loc_t *out_loc)
 {
@@ -496,51 +542,16 @@ const char *u8txt_line(u8file_t file, unsigned line, u8size_t *out_size)
 	return start;
 }
 
-/** A STRICTLY MONOTONE order over locations.
-	Must return true on `initialLocation`.
-	If `f(x)` is false, every location past `x` must also return false.
-	@returns a negative if `loc < target`
-	@returns 0 if `loc == target`
-	@returns a positive if `loc > target` 
-*/
-typedef int (*loc_cmp_f)( u8loc_t loc, const void *udata );
-
-/** Seeks for a marker
-	@param lo Inclusive virtual marker index
-	@param hi Inclusive virtual marker index
-	@param udata Closure context for `f`
-	@returns The index of the last marker <= the target
-*/
-static inline size_t _seek_marker(const u8loc_t *markers, size_t lo, size_t hi, const void *udata, loc_cmp_f f)
+/** Prefab for `_bseek` */
+static inline int _ord_loc_ix(size_t ix, void *_file, void *_target)
 {
-	while(lo < hi)
-	{
-		size_t mid = lo + (hi - lo)/2 + (hi - lo)%2; // ceil
-		int cmp = f(mid ? markers[mid - 1] : initialLocation, udata);
+	u8file_t file = _file;
+	size_t target = (size_t)_target;
+	u8loc_t m = _getMarker(_getMarkers(file), ix);
 
-		if(cmp < 0)
-			lo = mid;
-		else if(cmp > 0)
-			hi = mid - 1;
-		else
-			return mid;
-	}
-
-	assert(lo >= 0);
-
-	return lo;
-}
-
-static int _loc_cmp_ix(u8loc_t m, const void *udata)
-{
-	size_t targetIx = (size_t)udata;
-
-	if(m.characterIndex > targetIx)
-		return +1;
-	else if(m.characterIndex + MARKER_FREQ/UTF8_MAX >= targetIx)
-		return 0;
-	else
-		return -1;
+	return (m.characterIndex > target) ? -1
+		: (m.characterIndex + MARKER_FREQ/UTF8_MAX >= target) ? 0
+		: +1;
 }
 
 const char *u8txt_chr(u8file_t file, size_t index)
@@ -552,7 +563,7 @@ const char *u8txt_chr(u8file_t file, size_t index)
 	size_t bMin = index, bMax = index * UTF8_MAX;
 	
 	u8loc_t *m = _getMarkers(file);
-	size_t i = _seek_marker(m, bMin/MARKER_FREQ, bMax/MARKER_FREQ, (void*)index, _loc_cmp_ix);
+	size_t i = _bseek(bMin/MARKER_FREQ, bMax/MARKER_FREQ, file, (void*)index, _ord_loc_ix);
 
 	u8loc_t prec = _getMarker(m, i);
 	size_t off = i*MARKER_FREQ;
@@ -563,19 +574,22 @@ const char *u8txt_chr(u8file_t file, size_t index)
 	return u8z_strpos(file->bytes + off, EXACT_BYTES(file->size.byteCount - off), index - prec.characterIndex);
 }
 
-static int _loc_cmp_loc(u8loc_t loc, const void *udata)
+/** Prefab for `_bseek` that accepts a u8file_t, and a pair of ints */
+static inline int _ord_loc_pos(size_t ix, void *_file, void *_pos)
 {
-	const unsigned *want = udata;
+	u8file_t file = _file;
+	const unsigned *pos = _pos;
+	u8loc_t loc = _getMarker(_getMarkers(file), ix);
 
-	if(loc.line < want[0])
+	if(loc.line < pos[0])
 		return -1;
-	if(loc.line > want[0])
+	if(loc.line > pos[0])
 		return +1;
 
-	if(loc.column <= want[1])
-		return -1;
-	else
+	if(loc.column > pos[1])
 		return +1;
+	else 
+		return -1;
 }
 
 const char *u8txt_unLoc(u8file_t file, unsigned line, unsigned col, size_t *out_charIndex)
@@ -584,12 +598,15 @@ const char *u8txt_unLoc(u8file_t file, unsigned line, unsigned col, size_t *out_
 		return NULL;
 
 	unsigned want[2] = { line, col };
-	u8loc_t *markers = _getMarkers(file);
-	size_t mIx = _seek_marker(markers, 0, file->size.byteCount / MARKER_FREQ, want, _loc_cmp_loc);
-	u8loc_t loc = _getMarker(markers, mIx);
-
-	size_t ix = mIx * MARKER_FREQ;
-	size_t z = file->size.byteCount;
+	const ssize_t negIx =  _bseek(0, file->size.byteCount / MARKER_FREQ, file, want, _ord_loc_pos);
+	assert(negIx < 0); // _ord_loc_pos never returns 0
+	const size_t next = -negIx - 1; // first marker after target
+	assert(next > 0); // can't be initial position
+	const size_t mIx = next - 1;
+	
+	u8loc_t loc = _getMarker(_getMarkers(file), mIx); // last marker before target
+	size_t ix = mIx*MARKER_FREQ; // byte index
+	size_t z = file->size.byteCount - ix;
 
 	if(loc.charOff)
 	{
@@ -612,7 +629,7 @@ const char *u8txt_unLoc(u8file_t file, unsigned line, unsigned col, size_t *out_
 			break;
 
 		uchar_t c;
-		size_t l = u8ndec(file->bytes + ix, z, &c);
+		size_t l = u8ndec(file->bytes + ix, z - ix, &c);
 
 		loc = _loc_incr(loc, c);
 		ix += l;
