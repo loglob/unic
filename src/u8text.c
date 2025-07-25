@@ -286,13 +286,17 @@ static u8loc_t _loc_move(u8loc_t l0, const char *str, size_t n, size_t size)
 		size_t l = u8ndec(str + i, size - i, &c);
 
 		i += l;
-		l0 = _loc_incr(l0, c);
+		u8loc_t nextLoc = _loc_incr(l0, c);
 
-		if(n <= i)
+		if(n < i)
 		{
-			l0.charOff = (n < i) ? n - (i - l) : 0;
+			l0.charOff = n - (i - l);
 			return l0;
 		}
+		else if(n == i)
+			return nextLoc;
+
+		l0 = nextLoc;
 	}
 }
 //#endregion
