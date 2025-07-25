@@ -93,7 +93,7 @@ extern bool u8txt_unlink(u8list_t list, u8file_t file);
 #if _POSIX_SOURCE >= 200112L
 /** Opens a text file from a file descriptor.
 	@param fd A file descriptor. Regular files must be positioned at the start of the file.
-	@returns A file containing the entire file referenced by `fd`
+	@returns A file containing the entire file referenced by `fd`, or NULL on error
 */
 extern u8file_t u8txt_open(int fd);
 #endif

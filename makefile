@@ -17,6 +17,7 @@ test/%.so: test/%.c test/*.h ccheck ccheck/*.h include/*
 	cc $(OPT_CFLAGS) -fPIC -shared $< -o $@
 
 test: ccheck/ccheck out/libunic.so -- ccheck/integer-provider.so $(TEST_OBJECTS)
+	make -C testdata
 	./$^
 
 out/test: test/test.c $(DEBUG_OBJECTS) test/*.h
