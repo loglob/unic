@@ -41,6 +41,32 @@ TEST(u8enc_round_trip, struct Codepoint, chr)
 	assertCEq(chr.codepoint, decoded);
 }
 
+
+extern void u8lenc(uchar_t, size_t l, char buf[restrict static l]);
+
+TEST(u8lenc_round_trip, struct Codepoint, chr)
+{
+	char buf[10];
+
+	for (size_t l = u8enc(chr.codepoint, NULL); l <= UTF8_MAX; ++l)
+	{
+		u8lenc(chr.codepoint, l, buf);
+		buf[l] = 0;
+		
+		uchar_t c;
+		size_t n = u8dec(buf, &c);
+	
+		assertUEq(l, n);
+		assertCEq(chr.codepoint, c);
+
+		n = u8ndec(buf, l, &c);
+	
+		assertUEq(l, n);
+		assertCEq(chr.codepoint, c);
+	}
+
+}
+
 TEST(fputu8_round_trip, struct Pipe, echo, struct Codepoint, chr)
 {
 	size_t written = fputu8(chr.codepoint, echo.in);

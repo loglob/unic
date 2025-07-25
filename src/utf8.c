@@ -110,23 +110,26 @@ size_t u8dec(const char *str, uchar_t *c)
 	return cl;
 }
 
+extern inline void u8lenc(uchar_t uc, size_t l, char buf[restrict static l])
+{
+	// avoid the mess of bitwise manipulation
+	if(l == 1)
+		buf[0] = uc;
+	else
+	{
+		buf[0] = ((uc >> (6*(l - 1))) & (0xFF >> l)) | (0xFF00 >> l);
+
+		for(size_t i = 1; i < l; i++)
+			buf[i] = 0x80 | (0x3F & (uc >> (6 * (l - i - 1))));
+	}
+}
+
 size_t u8enc(uchar_t uc, char *buf)
 {
 	size_t l = u8len(uc);
 
 	if(buf)
-	{
-		// avoid the mess of bitwise manipulation
-		if(l == 1)
-			buf[0] = uc;
-		else
-		{
-			buf[0] = ((uc >> (6*(l - 1))) & (0xFF >> l)) | (0xFF00 >> l);
-
-			for(size_t i = 1; i < l; i++)
-				buf[i] = 0x80 | (0x3F & (uc >> (6 * (l - i - 1))));
-		}
-	}
+		u8lenc(uc, l, buf);
 
 	return l;
 }
