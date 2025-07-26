@@ -117,13 +117,36 @@ static u8file_t jumbleFile(const char *path)
 	size_t mmap##type  (size_t n, type buf[restrict static n]) { if(n) buf[0] = mmapFile(file);  return 1; } \
 	size_t read##type  (size_t n, type buf[restrict static n]) { if(n) buf[0] = readFile(file);  return 1; } \
 	size_t jumbled##type  (size_t n, type buf[restrict static n]) { if(n) buf[0] = jumbleFile(file);  return 1; } \
-	size_t format_##type (char *to, size_t n, const type thing[restrict static 1]) { (void)to; (void)n; (void)thing; return 0; } \
-	TEST(sanityCheck_##type, type, x) { u8size_t size = u8z_strsize(x->bytes, EXACT_BYTES(x->size.byteCount)); assertUEq(size.charCount, x->size.charCount); }
+	size_t format_##type (char *to, size_t n, const type thing[restrict static 1]) { (void)to; (void)n; (void)thing; return 0; }
 
 MAKE_PROVIDERS(Bible, "testdata/kjv.txt")
 MAKE_PROVIDERS(Grundgesetz, "testdata/gg.txt")
 
-TEST(bible_knownSize, Bible, f)
+/** Runs a u8file_t test on both text files. Expects a following function body.
+	@param test Name of the test
+	@param arg Name of the u8file_t argument to accept
+*/
+#define TEST_ALL(test, arg) \
+	static void _##test(u8file_t arg); \
+	TEST(Bible_##test, Bible, arg) { _##test(arg); } \
+	TEST(GG_##test, Grundgesetz, arg) { _##test(arg); } \
+	static void _##test(u8file_t arg)
+
+TEST_ALL(strsize, f)
+{
+	u8size_t sizeFromBytes = u8z_strsize(f->bytes, EXACT_BYTES(f->size.byteCount));
+	assertUEq(f->size.charCount, sizeFromBytes.charCount);
+
+	u8size_t sizeFromChars = u8z_strsize(f->bytes, EXACT_CHARS(f->size.charCount));
+	assertUEq(f->size.byteCount, sizeFromChars.byteCount);
+}
+
+TEST_ALL(isvalid, f)
+{
+	assertTrue( u8z_isvalid(f->bytes, f->size) );
+}
+
+TEST(Bible_knownSize, Bible, f)
 {
 	assertUEq(4602959, f->size.charCount);
 	assertUEq(31105, f->lines);
@@ -131,7 +154,7 @@ TEST(bible_knownSize, Bible, f)
 	assertTrue(f->size.byteCount <= 4602959 * UTF8_MAX);
 }
 
-TEST(gg_knownSize, Grundgesetz, f)
+TEST(GG_knownSize, Grundgesetz, f)
 {
 	assertUEq(179180, f->size.charCount);
 	assertUEq(3715, f->lines);
