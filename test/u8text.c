@@ -211,10 +211,15 @@ TEST(GG_text_search, Grundgesetz, f)
 
 TEST(GG_chr, Grundgesetz, f)
 {
-	const char *hit = u8txt_chr(f, 51289, NULL);
+	u8loc_t loc;
+	const char *hit = u8txt_chr(f, 51289, &loc);
 
 	assertTrue(hit != NULL);
 	assertTrue(u8_prefix("Artikel 59", hit));
+	assertUEq(51289, loc.characterIndex);
+	assertUEq(1115, loc.line);
+	assertUEq(1, loc.column);
+	assertUEq(0, loc.charOff);
 }
 
 TEST(GG_loc_round_trip, Grundgesetz, f)
@@ -260,9 +265,8 @@ TEST(Bible_text_search, Bible, f)
 TEST(Bible_location_search, Bible, f)
 {
 	size_t ix;
-	const char *str = u8txt_unLoc(f, 17774, 32, &ix);
+	const char *str = u8txt_unLoc(f, 17774, 31, &ix);
 	assertTrue(str != NULL);
 
-	const char expect[] = "seraphims";
-	assertTrue(u8_prefix(expect, str), " but got '%.20s'", str);
+	assertTrue(u8_prefix("seraphims", str), " but got '%.20s'", str);
 }
