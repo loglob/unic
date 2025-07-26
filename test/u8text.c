@@ -168,12 +168,17 @@ TEST(GG_knownSize, Grundgesetz, f)
 	assertTrue(f->size.byteCount <= GG_CHARS * UTF8_MAX);
 }
 
+static inline void assertPrefix(const char *prefix, const char *string)
+{
+	assertTrue(u8_prefix(prefix, string), " but got: '%.10s…'", string);
+}
+
 TEST(GG_unLoc, Grundgesetz, f)
 {
 	size_t ix;
 	const char *hit = u8txt_unLoc(f, 28, 22, &ix);
 	assertTrue(hit != NULL);
-	assertTrue(u8_prefix("Rheinland-Pfalz", hit), " but got: '%.10s…'", hit);
+	assertPrefix("Rheinland-Pfalz", hit);
 	assertUEq(1060, ix);
 }
 
@@ -185,7 +190,7 @@ TEST(GG_line, Grundgesetz, f)
 	assertTrue(line != NULL);
 	assertTrue(size.bytesExact);
 	assertTrue(size.charsExact);
-	assertTrue(u8_prefix("(1) Die Würde des Menschen ist unantastbar", line), " but got '%.20s'", line);
+	assertPrefix("(1) Die Würde des Menschen ist unantastbar", line);
 	assertUEq(65, size.charCount);
 
 	if(f->size.byteCount == GG_NORM_BYTES)
@@ -198,7 +203,7 @@ TEST(GG_text_search, Grundgesetz, f)
 	const char *hit = u8z_strstr(f->bytes, f->size, needle, NUL_TERMINATED);
 
 	assertTrue(hit != NULL);
-	assertTrue(u8_prefix(needle, hit));
+	assertPrefix(needle, hit);
 
 	// resolve location
 	u8loc_t loc;
@@ -215,7 +220,7 @@ TEST(GG_chr, Grundgesetz, f)
 	const char *hit = u8txt_chr(f, 51289, &loc);
 
 	assertTrue(hit != NULL);
-	assertTrue(u8_prefix("Artikel 59", hit));
+	assertPrefix("Artikel 59", hit);
 	assertUEq(51289, loc.characterIndex);
 	assertUEq(1115, loc.line);
 	assertUEq(1, loc.column);
@@ -228,7 +233,7 @@ TEST(GG_loc_round_trip, Grundgesetz, f)
 	const char *pos = u8txt_unLoc(f, 3031, 1, &ix);
 	assertTrue(pos != NULL);
 	assertUEq(146988, ix);
-	assertTrue(u8_prefix("XI. ÜBERGANGS- UND SCHLUSSBESTIMMUNGEN", pos), " but got '%.20s'", pos);
+	assertPrefix("XI. ÜBERGANGS- UND SCHLUSSBESTIMMUNGEN", pos);
 
 	u8loc_t loc;
 	assertUEq(0, u8txt_loc(f, pos, &loc));
@@ -257,16 +262,34 @@ TEST(Bible_text_search, Bible, f)
 	u8size_t lineSize;
 	const char *line = u8txt_line(f, loc.line, &lineSize);
 	assertTrue(line != NULL);
+	assertPrefix("Isaiah 55:6", line);
+	assertTrue(lineSize.bytesExact);
+	assertTrue(lineSize.charsExact);
+	assertUEq(87, lineSize.charCount);
 
-	static const char verse[] = "Isaiah 55:6";
-	assertTrue(u8_prefix(verse, line));
+	if(f->size.byteCount == BIBLE_NORM_BYTES)
+		assertUEq(87, lineSize.byteCount);
 }
 
 TEST(Bible_location_search, Bible, f)
 {
 	size_t ix;
 	const char *str = u8txt_unLoc(f, 17774, 31, &ix);
-	assertTrue(str != NULL);
 
-	assertTrue(u8_prefix("seraphims", str), " but got '%.20s'", str);
+	assertTrue(str != NULL);
+	assertPrefix("seraphims", str);
+	assertUEq(2621402, ix);
+}
+
+TEST(Bible_BOM, Bible, f)
+{
+	uchar_t bom;
+	size_t l = u8dec(f->bytes, &bom);
+
+	if(f->size.byteCount == BIBLE_NORM_BYTES)
+		assertUEq(3, l);
+
+	assertUEq(0xFEFF, bom); // Zero-width nonbreaking space
+
+	assertPrefix("KJV", f->bytes + l);
 }
