@@ -57,7 +57,7 @@ static u8file_t readFile(const char *path)
 			testFailure("read(): %s", strerror(errno));
 
 		size += delta;
-	} while(delta == grain);
+	} while((size_t)delta == grain);
 
 	u8file_t f = u8txt_load(buffer, size, u8txt_cleanup_free);
 
@@ -146,18 +146,123 @@ TEST_ALL(isvalid, f)
 	assertTrue( u8z_isvalid(f->bytes, f->size) );
 }
 
+static const size_t BIBLE_CHARS = 4602959;
+static const size_t BIBLE_NORM_BYTES = 4606957;
+
 TEST(Bible_knownSize, Bible, f)
 {
-	assertUEq(4602959, f->size.charCount);
+	assertUEq(BIBLE_CHARS, f->size.charCount);
 	assertUEq(31105, f->lines);
-	assertTrue(f->size.byteCount >= 4606957); // original encoding size
-	assertTrue(f->size.byteCount <= 4602959 * UTF8_MAX);
+	assertTrue(f->size.byteCount >= BIBLE_NORM_BYTES, " but got %zu", (size_t)f->size.byteCount); // original encoding size
+	assertTrue(f->size.byteCount <= BIBLE_CHARS * UTF8_MAX, " but got %zu", (size_t)f->size.byteCount);
 }
+
+static const size_t GG_CHARS = 179180;
+static const size_t GG_NORM_BYTES = 181906;
 
 TEST(GG_knownSize, Grundgesetz, f)
 {
-	assertUEq(179180, f->size.charCount);
+	assertUEq(GG_CHARS, f->size.charCount);
 	assertUEq(3715, f->lines);
-	assertTrue(f->size.byteCount >= 181906); // original encoding size
-	assertTrue(f->size.byteCount <= 179180 * UTF8_MAX);
+	assertTrue(f->size.byteCount >= GG_NORM_BYTES); // original encoding size
+	assertTrue(f->size.byteCount <= GG_CHARS * UTF8_MAX);
+}
+
+TEST(GG_unLoc, Grundgesetz, f)
+{
+	size_t ix;
+	const char *hit = u8txt_unLoc(f, 28, 22, &ix);
+	assertTrue(hit != NULL);
+	assertTrue(u8_prefix("Rheinland-Pfalz", hit), " but got: '%.10s…'", hit);
+	assertUEq(1060, ix);
+}
+
+TEST(GG_line, Grundgesetz, f)
+{
+	u8size_t size;
+	const char *line = u8txt_line(f, 40, &size);
+
+	assertTrue(line != NULL);
+	assertTrue(size.bytesExact);
+	assertTrue(size.charsExact);
+	assertTrue(u8_prefix("(1) Die Würde des Menschen ist unantastbar", line), " but got '%.20s'", line);
+	assertUEq(65, size.charCount);
+
+	if(f->size.byteCount == GG_NORM_BYTES)
+		assertUEq(66, size.byteCount);
+}
+
+TEST(GG_text_search, Grundgesetz, f)
+{
+	const char needle[] = "Artikel 100";
+	const char *hit = u8z_strstr(f->bytes, f->size, needle, NUL_TERMINATED);
+
+	assertTrue(hit != NULL);
+	assertTrue(u8_prefix(needle, hit));
+
+	// resolve location
+	u8loc_t loc;
+	assertIEq(0, u8txt_loc(f, hit, &loc));
+	assertUEq(2236, loc.line);
+	assertUEq(1, loc.column);
+	assertUEq(105779, loc.characterIndex);
+	assertUEq(0, loc.charOff);
+}
+
+TEST(GG_chr, Grundgesetz, f)
+{
+	const char *hit = u8txt_chr(f, 51289);
+
+	assertTrue(hit != NULL);
+	assertTrue(u8_prefix("Artikel 59", hit));
+}
+
+TEST(GG_loc_round_trip, Grundgesetz, f)
+{
+	size_t ix;
+	const char *pos = u8txt_unLoc(f, 3031, 1, &ix);
+	assertTrue(pos != NULL);
+	assertUEq(146988, ix);
+	assertTrue(u8_prefix("XI. ÜBERGANGS- UND SCHLUSSBESTIMMUNGEN", pos), " but got '%.20s'", pos);
+
+	u8loc_t loc;
+	assertUEq(0, u8txt_loc(f, pos, &loc));
+	assertIEq(0, loc.charOff);
+	assertUEq(146988, loc.characterIndex);
+	assertUEq(3031, loc.line);
+	assertUEq(1, loc.column);
+}
+
+TEST(Bible_text_search, Bible, f)
+{
+	const char *caseSens = u8z_strstr(f->bytes, f->size, "Seek ye the LORD", NUL_TERMINATED);
+	const char *caseInsens = u8z_strstrI(f->bytes, f->size, "seek ye the lord", NUL_TERMINATED);
+
+	assertPEq(caseSens, caseInsens);
+	assertTrue(caseSens != NULL);
+
+	u8loc_t loc;
+	assertIEq(0, u8txt_loc(f, caseSens, &loc));
+
+	assertUEq(0, loc.charOff);
+	assertUEq(2781136, loc.characterIndex);
+	assertUEq(18749, loc.line);
+	assertUEq(13, loc.column);
+
+	u8size_t lineSize;
+	const char *line = u8txt_line(f, loc.line, &lineSize);
+	assertTrue(line != NULL);
+
+	static const char verse[] = "Isaiah 55:6";
+	assertTrue(u8_prefix(verse, line));
+}
+
+TEST(Bible_location_search, Bible, f)
+{
+	size_t ix;
+	const char *str = u8txt_unLoc(f, 17774, 32, &ix);
+	assertTrue(str != NULL);
+
+	const char expect[] = "seraphims";
+	assertTrue(u8_prefix(expect, str), " but got '%.20s'", str);
 }
