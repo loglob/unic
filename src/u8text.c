@@ -253,7 +253,7 @@ static inline u8loc_t _loc_incr(u8loc_t l0, uchar_t chr)
 	if(chr == '\n')
 	{
 		++l0.line;
-		l0.column = 0;
+		l0.column = 1;
 	}
 	else
 		++l0.column;
