@@ -236,12 +236,12 @@ static const u8loc_t initialLocation = {
 
 //#region Helper Functions
 
-static inline u8loc_t *_getMarkers(u8file_t file)
+static inline const u8loc_t *_getMarkers(u8file_t file)
 {
 	return (u8loc_t*)&file->_opaque;
 }
 
-static inline u8loc_t _getMarker(u8loc_t *array, size_t ix)
+static inline u8loc_t _getMarker(const u8loc_t *array, size_t ix)
 {
 	return ix ? array[ix - 1] : initialLocation;
 }
@@ -544,12 +544,15 @@ const char *u8txt_line(u8file_t file, unsigned line, u8size_t *out_size)
 	return start;
 }
 
-/** Prefab for `_bseek` */
-static inline int _ord_loc_ix(size_t ix, void *_file, void *_target)
+/** Prefab for `_bseek`
+	@param _markers actually `const u8loc_t*`
+	@param _target actually `size_t` (without indirection)
+*/
+static inline int _ord_loc_ix(size_t ix, void *_markers, void *_target)
 {
-	u8file_t file = _file;
+	const u8loc_t *markers = _markers;
 	size_t target = (size_t)_target;
-	size_t got = _getMarker(_getMarkers(file), ix).characterIndex;
+	size_t got = _getMarker(markers, ix).characterIndex;
 	static const size_t MIN_CHARS_PER_MARKER = MARKER_FREQ/UTF8_MAX;
 
 	if(got < target)
@@ -574,8 +577,8 @@ const char *u8txt_chr(u8file_t file, size_t index, u8loc_t *out_loc)
 	bMin /= MARKER_FREQ;
 	bMax /= MARKER_FREQ;
 	
-	u8loc_t *m = _getMarkers(file);
-	ssize_t i = _bseek(0, file->size.byteCount / MARKER_FREQ, file, (void*)index, _ord_loc_ix);
+	const u8loc_t *m = _getMarkers(file);
+	ssize_t i = _bseek(bMin, bMax, (void*)m, (void*)index, _ord_loc_ix);
 
 	// correct index to reference last marker <= target
 	if(i < 0)
