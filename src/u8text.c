@@ -609,34 +609,32 @@ const char *u8txt_unLoc(u8file_t file, unsigned line, unsigned col, size_t *out_
 	const size_t mIx = next - 1;
 	
 	u8loc_t loc = _getMarker(_getMarkers(file), mIx); // last marker before target
-	size_t ix = mIx*MARKER_FREQ; // byte index
-	size_t z = file->size.byteCount - ix;
+	const char *p = file->bytes + mIx*MARKER_FREQ;
 
 	if(loc.charOff)
 	{
-		ix -= loc.charOff;
-		z += loc.charOff;
+		p -= loc.charOff;
 		loc.charOff = 0;
 	}
 
 	while(loc.line <= line)
 	{
+		uchar_t c;
+		size_t l = u8txt_dec(file, p, &c);
+
+		if(l == 0)
+			break;
+
 		if(loc.line == line && loc.column == col)
 		{
 			if(out_charIndex)
 				*out_charIndex = loc.characterIndex;
 
-			return file->bytes + ix;
+			return p;
 		}
 
-		if(ix >= z)
-			break;
-
-		uchar_t c;
-		size_t l = u8ndec(file->bytes + ix, z - ix, &c);
-
 		loc = _loc_incr(loc, c);
-		ix += l;
+		p += l;
 	}
 
 	return NULL;
