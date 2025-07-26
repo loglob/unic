@@ -211,7 +211,7 @@ TEST(GG_text_search, Grundgesetz, f)
 
 TEST(GG_chr, Grundgesetz, f)
 {
-	const char *hit = u8txt_chr(f, 51289);
+	const char *hit = u8txt_chr(f, 51289, NULL);
 
 	assertTrue(hit != NULL);
 	assertTrue(u8_prefix("Artikel 59", hit));

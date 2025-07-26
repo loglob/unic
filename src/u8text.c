@@ -65,7 +65,7 @@ void u8txt_destroy(u8list_t files, bool freeAll)
 	@param list Clojure context for `ord`
 	@param target closure context for `ord`
 	@param ord monotone ordering function. 
-			Returns a negative if `ix < target`, positive of `ix > target` and 0 if `ix` is an exact match
+			Returns a negative if `ix < target`, positive if `ix > target` and 0 if `ix` is an exact match
 	@returns The index (>= 0) of an exact match
 	@returns `-(x + 1)` where `x` is the smallest index > the target, or `x = hi+1` if all elements were smaller
 */
@@ -511,11 +511,8 @@ const char *u8txt_line(u8file_t file, unsigned line, u8size_t *out_size)
 	}
 	else
 	{
-		// seek for starting \n, then skip (in case line is empty)
-		start = u8txt_unLoc(file, line, 0, &startIndex);
+		start = u8txt_unLoc(file, line, 1, &startIndex);
 		assert(start);
-		start += u8txt_dec(file, start, NULL);
-		++startIndex;
 	}
 
 	if(out_size)
@@ -532,7 +529,8 @@ const char *u8txt_line(u8file_t file, unsigned line, u8size_t *out_size)
 		else
 		{
 			size_t endIndex;
-			const char *end = u8txt_unLoc(file, line + 1, 0, &endIndex);
+			const char *end = u8txt_unLoc(file, line + 1, 1, &endIndex);
+			assert(end);
 
 			*out_size = (u8size_t) {
 				.byteCount = end - start,
@@ -551,31 +549,69 @@ static inline int _ord_loc_ix(size_t ix, void *_file, void *_target)
 {
 	u8file_t file = _file;
 	size_t target = (size_t)_target;
-	u8loc_t m = _getMarker(_getMarkers(file), ix);
+	size_t got = _getMarker(_getMarkers(file), ix).characterIndex;
+	static const size_t MIN_CHARS_PER_MARKER = MARKER_FREQ/UTF8_MAX;
 
-	return (m.characterIndex > target) ? -1
-		: (m.characterIndex + MARKER_FREQ/UTF8_MAX >= target) ? 0
-		: +1;
+	if(got < target)
+		return -1;
+	else if(target - got <= MIN_CHARS_PER_MARKER)
+		return 0;
+	else // got + X > target
+		return +1;
 }
 
-const char *u8txt_chr(u8file_t file, size_t index)
+const char *u8txt_chr(u8file_t file, size_t index, u8loc_t *out_loc)
 {
 	if(index >= file->size.charCount)
 		return NULL;
 
 	// possible range of byte offsets corresponding to `chrIx`
-	size_t bMin = index, bMax = index * UTF8_MAX;
+	size_t bMin = index, bMax = (index * UTF8_MAX);
+
+	if(bMax >= file->size.byteCount)
+		bMax = file->size.byteCount - 1;
+
+	bMin /= MARKER_FREQ;
+	bMax /= MARKER_FREQ;
 	
 	u8loc_t *m = _getMarkers(file);
-	size_t i = _bseek(bMin/MARKER_FREQ, bMax/MARKER_FREQ, file, (void*)index, _ord_loc_ix);
+	ssize_t i = _bseek(0, file->size.byteCount / MARKER_FREQ, file, (void*)index, _ord_loc_ix);
 
-	u8loc_t prec = _getMarker(m, i);
-	size_t off = i*MARKER_FREQ;
+	// correct index to reference last marker <= target
+	if(i < 0)
+	{
+		i = -i - 1;
+		assert(i > 0);
+		--i;
+	}
 
-	if(prec.charOff)
-		off -= prec.charOff;
+	u8loc_t loc = _getMarker(m, i);
+	const char *p = file->bytes + i*MARKER_FREQ;
 
-	return u8z_strpos(file->bytes + off, EXACT_BYTES(file->size.byteCount - off), index - prec.characterIndex);
+	if(loc.charOff)
+	{
+		p -= loc.charOff;
+		loc.charOff = 0;
+	}
+
+	for(;;)
+	{
+		uchar_t c;
+		size_t l = u8txt_dec(file, p, &c);
+		assert(l != 0); // we've already checked the file size
+
+		if(loc.characterIndex == index)
+		{
+			if(out_loc)
+				*out_loc = loc;
+
+			return p;
+		}
+
+		assert(loc.characterIndex < index); // otherwise we've skipped an index?!		
+		p += l;
+		loc = _loc_incr(loc, c);
+	}
 }
 
 /** Prefab for `_bseek` that accepts a u8file_t, and a pair of ints */

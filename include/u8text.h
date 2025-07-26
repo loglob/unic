@@ -146,10 +146,11 @@ extern int u8txt_loc(u8file_t file, const char *chr, u8loc_t *out_loc);
 extern const char *u8txt_line(u8file_t file, unsigned line, u8size_t *out_size);
 
 /** Looks up a character by its index
+	@param out_loc Unless NULL, overwritten with the complete location of that character
 	@returns A pointer to the first byte of the character at `index`
 	@returns NULL if `index` was out of bounds
 */
-extern const char *u8txt_chr(u8file_t file, size_t index);
+extern const char *u8txt_chr(u8file_t file, size_t index, u8loc_t *out_loc);
 
 /** Looks up a line/col location
 	@param line A 1-based line index
