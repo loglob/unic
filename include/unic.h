@@ -217,6 +217,14 @@ extern size_t u8dec(const char *str, uchar_t *c);
 	@returns The amount of bytes written. */
 extern size_t u8enc(uchar_t uc, char *buf);
 
+/** Encodes a character with a fixed number of bytes, potentially over-encoding.
+	Drops high bits if too few bytes are available.
+	@param uc Character to incode
+	@param l Size of `buf`. MUST be in 1..UTF8_MAX  
+	@param buf Buffer to write to. Must not be NULL
+*/
+extern void u8nenc(uchar_t uc, size_t l, char *buf);
+
 // #endregion utf8.c
 
 // #region util.c

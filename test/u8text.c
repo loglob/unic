@@ -67,8 +67,6 @@ static u8file_t readFile(const char *path)
 	return f;
 }
 
-extern void u8lenc(uchar_t, size_t l, char buf[restrict static l]);
-
 /** Loads a file with randomly over-encoded characters */
 static u8file_t jumbleFile(const char *path)
 {
@@ -99,7 +97,7 @@ static u8file_t jumbleFile(const char *path)
 			l += rand() % (1 + UTF8_MAX - l);
 		
 		assertTrue(l <= UTF8_MAX);
-		u8lenc(chr, l, buffer + size);
+		u8nenc(chr, l, buffer + size);
 		size += l;
 	}
 

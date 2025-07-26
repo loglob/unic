@@ -110,7 +110,7 @@ size_t u8dec(const char *str, uchar_t *c)
 	return cl;
 }
 
-extern inline void u8lenc(uchar_t uc, size_t l, char buf[restrict static l])
+extern inline void u8nenc(uchar_t uc, size_t l, char *buf)
 {
 	// avoid the mess of bitwise manipulation
 	if(l == 1)
@@ -129,7 +129,7 @@ size_t u8enc(uchar_t uc, char *buf)
 	size_t l = u8len(uc);
 
 	if(buf)
-		u8lenc(uc, l, buf);
+		u8nenc(uc, l, buf);
 
 	return l;
 }
