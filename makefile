@@ -13,8 +13,11 @@ TEST_OBJECTS = $(patsubst %.c,%.so, $(wildcard test/*.c))
 out/libunic.so: $(OBJECTS)
 	cc $(OPT_CFLAGS) -shared $^ -o $@
 
+out/libunic-debug.so: $(DEBUG_OBJECTS)
+	cc $(CFLAGS) -g -fPIC -shared $^ -o $@
+
 test/%.so: test/%.c test/*.h ccheck ccheck/*.h include/*
-	cc $(OPT_CFLAGS) -fPIC -shared $< -o $@
+	cc $(CFLAGS) -g -fPIC -shared $< -o $@
 
 test: ccheck/ccheck out/libunic.so -- ccheck/integer-provider.so $(TEST_OBJECTS)
 	make -C testdata
@@ -30,7 +33,7 @@ out/%.o: src/%.c src/*.h include/*
 
 out/%-debug.o: src/%.c src/*.h include/*
 	mkdir -p out
-	cc $(CFLAGS) -g -c $< -o $@
+	cc $(CFLAGS) -g -fPIC -c $< -o $@
 
 doc: unic.dox include/unic.h
 	mkdir -p doc
