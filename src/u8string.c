@@ -88,6 +88,16 @@ bool u8_strneqI(const char *a, const char *b, size_t n)
 	return u8z_streqI(a, MAX_CHARS(n), b, MAX_CHARS(n));
 }
 
+bool u8_prefix(const char *prefix, const char *full)
+{
+	return u8z_prefix(prefix, NUL_TERMINATED, full, NUL_TERMINATED);
+}
+
+bool u8_prefixI(const char *prefix, const char *full)
+{
+	return u8z_prefixI(prefix, NUL_TERMINATED, full, NUL_TERMINATED);
+}
+
 bool u8_isnorm(const char *str)
 {
 	return u8z_isnorm(str, NUL_TERMINATED);

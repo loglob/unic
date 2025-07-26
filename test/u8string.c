@@ -92,6 +92,32 @@ TEST(streq_nontrivial, str_t, a, str_t, b)
 	assertTrue(! u8_streqI(a.bytes, b.bytes));
 }
 
+/** u8_prefix must accept all actual prefixes of a string */
+TEST(u8_prefix_accept, str_t, str)
+{
+	u8size_t z = (u8size_t){ true, str.size, true, str.count };
+
+	for(size_t c = 0; c <= str.count; ++c)
+		assertTrue( u8z_prefix(str.bytes, EXACT_CHARS(c), str.bytes, z) );
+}
+
+TEST(u8_prefix_example)
+{
+	assertTrue( u8_prefix("aababa", "aabababbaabb") );
+	assertTrue( !u8_prefix("aabababbaabb", "aababa") );
+	assertTrue( u8_prefixI("aababa", "aabababbaabb") );
+	assertTrue( !u8_prefixI("aabababbaabb", "aababa") );
+	
+	assertTrue( !u8_prefix("aababa", "ccdcdc") );
+	assertTrue( !u8_prefix("ccdcdc", "aababa") );
+	assertTrue( !u8_prefixI("aababa", "ccdcdc") );
+	assertTrue( !u8_prefixI("ccdcdc", "aababa") );
+
+	assertTrue( !u8_prefix("aababa", "AabABabbaabb") );
+	assertTrue( u8_prefixI("aababa", "AabABabbaabb") );
+
+}
+
 TEST(streq_overencode)
 {
 	const char *normal = "foo" UNUL "bar";
@@ -154,6 +180,7 @@ TEST(u8_ststr_example)
 	assertPEq(u8_strstrI(strophe1, "über"), u8_strstr(strophe1, "über"));
 	assertPEq(u8_strrstrI(strophe1, "über"), u8_strstr(strophe1, "Über"));
 }
+
 
 TEST(partial_chars, struct Codepoint, chr)
 {

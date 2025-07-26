@@ -24,6 +24,11 @@
 	} \
 }
 
+/** Scans over two strings simultaneously
+	Sets `c1` and `c2` to the current characters, and `l1` and `l2` to their lengths.
+	The end of strings is observable as a single char with `l* = 0`.
+	Once one such character is observed, iteration ends afterwards.
+*/
 #define BISCAN(str1, size1, str2, size2, ...) \
 { \
 	const char *const _s1 = (str1), *const _s2 = (str2); \
@@ -263,6 +268,36 @@ bool u8z_streqI(const char *a, u8size_t n, const char *b, u8size_t m)
 	})
 
 	return true;
+}
+
+bool u8z_prefix(const char *prefix, u8size_t n, const char *full, u8size_t m)
+{
+	if(triviallyGreater(n, m))
+		return false;
+
+	BISCAN(prefix, n, full, m, {
+		if(l1 == 0) // prefix ended
+			return true;
+		if(c1 != c2)
+			return false;
+	})
+
+	return false;
+}
+
+bool u8z_prefixI(const char *prefix, u8size_t n, const char *full, u8size_t m)
+{
+	if(triviallyGreater(n, m))
+		return false;
+
+	BISCAN(prefix, n, full, m, {
+		if(l1 == 0) // prefix ended
+			return true;
+		if(! uchar_alike(c1, c2))
+			return false;
+	})
+
+	return false;
 }
 
 bool u8z_isnorm(const char *str, u8size_t size)

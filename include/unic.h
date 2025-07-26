@@ -208,7 +208,8 @@ __nonnull((1))
 	A well-encoded NUL terminator is treated as a character of length 1.
 	@param str The utf-8 encoded buffer to read from. May not be NULL.
 	@param c The location to store the character in. May be NULL to only determine the length of the next character.
-	@returns The amount of bytes read. */
+	@returns The amount of bytes read.
+*/
 extern size_t u8dec(const char *str, uchar_t *c);
 
 /** Writes the given unicode character to the buffer.
@@ -217,6 +218,7 @@ extern size_t u8dec(const char *str, uchar_t *c);
 	@returns The amount of bytes written. */
 extern size_t u8enc(uchar_t uc, char *buf);
 
+__nonnull((3))
 /** Encodes a character with a fixed number of bytes, potentially over-encoding.
 	Drops high bits if too few bytes are available.
 	@param uc Character to incode
@@ -428,6 +430,20 @@ extern bool u8_streqI(const char *a, const char *b);
 /** Determines if the first `n` characters of two strings are equal, ignoring case. */
 extern bool u8_strneqI(const char *a, const char *b, size_t n);
 
+__nonnull((1,2))
+/** Determines if one utf-8 encoded string is a prefix of another.
+	Note that, for normalized strings, `strncmp` achieves the same and is more efficient.
+	@param prefix The prefix
+	@param full The full string
+*/
+extern bool u8_prefix(const char *prefix, const char *full);
+__nonnull((1,2))
+/** Case-insensitive `u8_prefix`
+	@param prefix The prefix
+	@param full The full string
+*/
+extern bool u8_prefixI(const char *prefix, const char *full);
+
 __nonnull((1))
 /** Determines if the given utf-8 encoded string is normalized utf-8.
 	This means that every character is encoded with its normal length.
@@ -549,6 +565,11 @@ extern bool u8z_streq(const char *a, u8size_t n, const char *b, u8size_t m);
 
 /** Variant of `u8_streqI()` over sized prefixes */
 extern bool u8z_streqI(const char *a, u8size_t n, const char *b, u8size_t m);
+
+/** Variant of `u8_prefix()` over sized prefixes */
+extern bool u8z_prefix(const char *prefix, u8size_t n, const char *full, u8size_t m);
+/** Variant of `u8_prefixI()` over sized prefixes */
+extern bool u8z_prefixI(const char *prefix, u8size_t n, const char *full, u8size_t m);
 
 /** Variant of `u8_isnorm()` on a sized prefix */
 extern bool u8z_isnorm(const char *str, u8size_t size);
