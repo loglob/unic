@@ -168,6 +168,7 @@ TEST(GG_knownSize, Grundgesetz, f)
 	assertTrue(f->size.byteCount <= GG_CHARS * UTF8_MAX);
 }
 
+__nonnull((1,2))
 static inline void assertPrefix(const char *prefix, const char *string)
 {
 	assertTrue(u8_prefix(prefix, string), " but got: '%.10s…'", string);
@@ -217,11 +218,12 @@ TEST(GG_text_search, Grundgesetz, f)
 TEST(GG_chr, Grundgesetz, f)
 {
 	u8loc_t loc;
-	const char *hit = u8txt_chr(f, 51289, &loc);
+	const size_t ix = 51289;
+	const char *hit = u8txt_chr(f, ix, &loc);
 
 	assertTrue(hit != NULL);
 	assertPrefix("Artikel 59", hit);
-	assertUEq(51289, loc.characterIndex);
+	assertUEq(ix, loc.characterIndex);
 	assertUEq(1115, loc.line);
 	assertUEq(1, loc.column);
 	assertUEq(0, loc.charOff);
@@ -281,6 +283,22 @@ TEST(Bible_location_search, Bible, f)
 	assertUEq(2621402, ix);
 }
 
+TEST(Bible_chr, Bible, f)
+{
+	u8loc_t loc;
+	const size_t ix = 2463663 + 1;
+	const char *hit = u8txt_chr(f, ix, &loc);
+
+	assertTrue(hit != NULL);
+	assertPrefix("find the knowledge of God.", hit);
+
+	assertUEq(0, loc.charOff);
+	assertUEq(ix, loc.characterIndex);
+	assertUEq(16441, loc.line);
+	assertUEq(67, loc.column);
+}
+
+/** Check for the proper byte order mark */
 TEST(Bible_BOM, Bible, f)
 {
 	uchar_t bom;

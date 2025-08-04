@@ -115,7 +115,6 @@ TEST(u8_prefix_example)
 
 	assertTrue( !u8_prefix("aababa", "AabABabbaabb") );
 	assertTrue( u8_prefixI("aababa", "AabABabbaabb") );
-
 }
 
 TEST(streq_overencode)
