@@ -24,6 +24,11 @@
 	} \
 }
 
+/** Scans over two strings simultaneously
+	Sets `c1` and `c2` to the current characters, and `l1` and `l2` to their lengths.
+	The end of strings is observable as a single char with `l* = 0`.
+	Once one such character is observed, iteration ends afterwards.
+*/
 #define BISCAN(str1, size1, str2, size2, ...) \
 { \
 	const char *const _s1 = (str1), *const _s2 = (str2); \
@@ -63,6 +68,17 @@ u8size_t u8z_offset(u8size_t z, size_t byteOffset, size_t charOffset)
 		charOffset > z.charCount ? 0 : z.charCount - charOffset
 	};
 
+}
+
+/** @returns Whether every string limited by `a` is always longer than any string limited by `b`. */
+static inline bool triviallyGreater(u8size_t a, u8size_t b)
+{
+	// a NUL terminated (and thus may be arbitrarily short)
+	if(!(a.bytesExact || a.charsExact))
+		return false;
+	// ∃ over b, ∀ over a
+	return (a.byteCount > b.byteCount          && a.charCount > b.byteCount)
+		|| (a.byteCount > UTF8_MAX*b.charCount && a.charCount > b.charCount);
 }
 
 u8size_t u8z_strsize(const char *str, u8size_t size)
@@ -115,17 +131,33 @@ uchar_t u8z_strat(const char *str, u8size_t size, size_t pos)
 	return 0;	
 }
 
-#define SCANFUNC(str, size, cond) { \
+/** Generates a loop over an entire string searching for a single location
+	@param str String to iterate
+	@param size u8size_t of `str`
+	@param cond acceptance condition
+	@param stopCond reject condition. Checked BEFORE cond.
+*/
+#define SCANFUNC(str, size, cond, stopCond) { \
 	SCAN(str, size, { \
+		if(stopCond) \
+			break; \
 		if(cond) \
 			return str + byteIx; \
 	}) \
 	return NULL; \
 }
 
-#define R_SCANFUNC(str, size, cond) { \
+/** Generates a loop over an entire string searching for a single location
+	@param str String to iterate
+	@param size u8size_t of `str`
+	@param cond acceptance condition
+	@param stopCond early stop condition, returning last match. Checked BEFORE cond.
+*/
+#define R_SCANFUNC(str, size, cond, stopCond) { \
 	const char *ret = NULL; \
 	SCAN(str, size, { \
+		if(stopCond) \
+			break; \
 		if(cond) \
 			ret = str + byteIx; \
 	}) \
@@ -133,19 +165,19 @@ uchar_t u8z_strat(const char *str, u8size_t size, size_t pos)
 }
 
 const char *u8z_strpos(const char *str, u8size_t size, size_t pos)
-	SCANFUNC(str, size, charIx == pos)
+	SCANFUNC(str, size, charIx == pos, false)
 
 const char *u8z_strchr(const char *str, u8size_t size, uchar_t chr)
-	SCANFUNC(str, size, c == chr)
+	SCANFUNC(str, size, c == chr, false)
 
 const char *u8z_strchrI(const char *str, u8size_t size, uchar_t chr)
-	SCANFUNC(str, size, uchar_alike(c, chr))
+	SCANFUNC(str, size, uchar_alike(c, chr), false)
 
 const char *u8z_strrchr(const char *str, u8size_t size, uchar_t chr)
-	R_SCANFUNC(str, size, c == chr)
+	R_SCANFUNC(str, size, c == chr, false)
 
 const char *u8z_strrchrI(const char *str, u8size_t size, uchar_t chr)
-	R_SCANFUNC(str, size, uchar_alike(c, chr))
+	R_SCANFUNC(str, size, uchar_alike(c, chr), false)
 
 
 const char *u8z_strstr(const char *haystack, u8size_t n, const char *needle, u8size_t m)
@@ -155,10 +187,13 @@ const char *u8z_strstr(const char *haystack, u8size_t n, const char *needle, u8s
 	m.charsExact = true;
 	m.charCount = len;
 
+	if(triviallyGreater(m, n))
+		return NULL;
+
 	SCANFUNC(haystack, n, u8z_streq(
 		haystack + byteIx, u8z_min(u8z_offset(n, byteIx, charIx), m),
 		needle, m
-	))
+	), triviallyGreater(m, u8z_offset(n, byteIx, charIx)))
 }
 
 const char *u8z_strrstr(const char *haystack, u8size_t n, const char *needle, u8size_t m)
@@ -168,11 +203,13 @@ const char *u8z_strrstr(const char *haystack, u8size_t n, const char *needle, u8
 	m.charsExact = true;
 	m.charCount = len;
 
+	if(triviallyGreater(m, n))
+		return NULL;
+
 	R_SCANFUNC(haystack, n, u8z_streq(
 		haystack + byteIx, u8z_min(u8z_offset(n, byteIx, charIx), m),
 		needle, m
-	))
-
+	), triviallyGreater(m, u8z_offset(n, byteIx, charIx)))
 }
 
 const char *u8z_strstrI(const char *haystack, u8size_t n, const char *needle, u8size_t m)
@@ -182,10 +219,13 @@ const char *u8z_strstrI(const char *haystack, u8size_t n, const char *needle, u8
 	m.charsExact = true;
 	m.charCount = len;
 
+	if(triviallyGreater(m, n))
+		return NULL;
+
 	SCANFUNC(haystack, n, u8z_streqI(
 		haystack + byteIx, u8z_min(u8z_offset(n, byteIx, charIx), m),
 		needle, m
-	))
+	), triviallyGreater(m, u8z_offset(n, byteIx, charIx)))
 }
 
 const char *u8z_strrstrI(const char *haystack, u8size_t n, const char *needle, u8size_t m)
@@ -195,24 +235,18 @@ const char *u8z_strrstrI(const char *haystack, u8size_t n, const char *needle, u
 	m.charsExact = true;
 	m.charCount = len;
 
+	if(triviallyGreater(m, n))
+		return NULL;
+
 	R_SCANFUNC(haystack, n, u8z_streqI(
 		haystack + byteIx, u8z_min(u8z_offset(n, byteIx, charIx), m),
 		needle, m
-	))
-}
-
-static inline bool triviallyNotEqual(u8size_t a, u8size_t b)
-{
-	#define DIV_CEIL(n,d) ((n)/(d) + ((n)%(d) > 0))
-	return (a.bytesExact && (a.byteCount > b.byteCount || DIV_CEIL(a.byteCount, UTF8_MAX) > b.charCount))
-		|| (b.bytesExact && (b.byteCount > a.byteCount || DIV_CEIL(b.byteCount, UTF8_MAX) > a.charCount))
-		|| (a.charsExact && (a.charCount > b.charCount || a.charCount > b.byteCount))
-		|| (b.charsExact && (b.charCount > a.charCount || b.charCount > a.byteCount));
+	), triviallyGreater(m, u8z_offset(n, byteIx, charIx)))
 }
 
 bool u8z_streq(const char *a, u8size_t n, const char *b, u8size_t m)
 {
-	if(triviallyNotEqual(n, m))
+	if(triviallyGreater(n, m) || triviallyGreater(m, n))
 		return false;
 
 	BISCAN(a, n, b, m, {
@@ -225,7 +259,7 @@ bool u8z_streq(const char *a, u8size_t n, const char *b, u8size_t m)
 
 bool u8z_streqI(const char *a, u8size_t n, const char *b, u8size_t m)
 {
-	if(triviallyNotEqual(n, m))
+	if(triviallyGreater(n, m) || triviallyGreater(m, n))
 		return false;
 
 	BISCAN(a, n, b, m, {
@@ -234,6 +268,36 @@ bool u8z_streqI(const char *a, u8size_t n, const char *b, u8size_t m)
 	})
 
 	return true;
+}
+
+bool u8z_prefix(const char *prefix, u8size_t n, const char *full, u8size_t m)
+{
+	if(triviallyGreater(n, m))
+		return false;
+
+	BISCAN(prefix, n, full, m, {
+		if(l1 == 0) // prefix ended
+			return true;
+		if(c1 != c2)
+			return false;
+	})
+
+	return false;
+}
+
+bool u8z_prefixI(const char *prefix, u8size_t n, const char *full, u8size_t m)
+{
+	if(triviallyGreater(n, m))
+		return false;
+
+	BISCAN(prefix, n, full, m, {
+		if(l1 == 0) // prefix ended
+			return true;
+		if(! uchar_alike(c1, c2))
+			return false;
+	})
+
+	return false;
 }
 
 bool u8z_isnorm(const char *str, u8size_t size)

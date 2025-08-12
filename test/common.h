@@ -41,12 +41,18 @@ struct Pipe {
 		testFailure( "Assertion Failure: Expected %s not to equal %s, but got " f "." fmt , got_str, bad_str, pr(__g) ,##__VA_ARGS__ ); \
 } while(0)
 
+/** Asserts two signed integer expressions are equal, evaluating each exactly once. */
 #define assertIEq(want, got, ...) GEN_EQ(intmax_t, __w == __g, , "%ld", want, #want, got, #got, "" __VA_ARGS__)
+/** Asserts two unsigned integer expressions are equal, evaluating each exactly once. */
 #define assertUEq(want, got, ...) GEN_EQ(uintmax_t, __w == __g, , "%lu", want, #want, got, #got, "" __VA_ARGS__)
+/** Asserts two string expressions are equal, evaluating each exactly once. */
 #define assertSEq(want, got, ...) GEN_EQ(const char*, (strcmp(__w,__g) == 0),, "'%s'", want, #want, got, #got, "" __VA_ARGS__)
+/** Asserts two uchar_t expressions are equal, evaluating each exactly once. */
 #define assertCEq(want, got, ...) GEN_EQ(uchar_t, __w == __g,  , "U+%04X", want, #want, got, #got, "" __VA_ARGS__)
+/** Asserts two pointer expressions are equal, evaluating each exactly once. */
 #define assertPEq(want, got, ...) GEN_EQ(const void*, __w == __g,  , "%p", want, #want, got, #got, "" __VA_ARGS__)
 
+/** Asserts two unsigned integer expressions are NOT equal, evaluating each exactly once. */
 #define assertUNEq(bad, got, ...) GEN_NEQ(uintmax_t, __b == __g,  , "%lu", bad, #bad, got, #got, "" __VA_ARGS__)
 
 
