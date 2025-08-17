@@ -9,6 +9,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#if !defined(_POSIX_SOURCE) || _POSIX_SOURCE < 200112L
+#error "Test suite requires POSIX support to be enabled"
+#endif
+
 /** Example of simple ASCII text */
 typedef u8file_t Bible;
 /** Contains Latin-1 (i.e. 2-byte) sequences */
