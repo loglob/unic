@@ -36,7 +36,7 @@
 	@returns The index (>= 0) of an exact match
 	@returns `-(x + 1)` where `x` is the smallest index > the target, or `x = hi+1` if all elements were smaller
 */
-static inline ssize_t _bseek(size_t lo, size_t hi, void *list, void *target, int (*ord)(size_t ix, void *list, void *target))
+static inline signed long long _bseek(size_t lo, size_t hi, void *list, void *target, int (*ord)(size_t ix, void *list, void *target))
 {
 	size_t supremum = hi + 1;
 
@@ -139,6 +139,11 @@ static u8loc_t _loc_move(u8loc_t l0, const char *str, size_t n, size_t size)
 /** Size of a huge page, 2 MiB */
 static const size_t hugePageSize = 2*1024*1024;
 
+void u8txt_cleanup_munmap(u8file_t file)
+{
+	munmap( (char*)file->bytes, file->size.byteCount );
+}
+
 u8file_t u8txt_open(int fd)
 {
 	struct stat st;
@@ -205,7 +210,7 @@ u8file_t u8txt_open(int fd)
 		}
 
 		buf = nbuf;
-		ssize_t n = read(fd, buf + size, delta);
+		signed long long n = read(fd, buf + size, delta);
 
 		if(n < 0)
 		{
@@ -273,11 +278,6 @@ u8file_t u8txt_load(const char *bytes, size_t size, cleanup_f cleanup)
 void u8txt_cleanup_free(u8file_t file)
 {
 	free((char*)file->bytes);
-}
-
-void u8txt_cleanup_munmap(u8file_t file)
-{
-	munmap( (char*)file->bytes, file->size.byteCount );
 }
 
 void u8txt_free(u8file_t file)
@@ -405,7 +405,7 @@ const char *u8txt_chr(u8file_t file, size_t index, u8loc_t *out_loc)
 	bMax /= MARKER_FREQ;
 	
 	const u8loc_t *m = _getMarkers(file);
-	ssize_t i = _bseek(bMin, bMax, (void*)m, (void*)index, _ord_loc_ix);
+	signed long long i = _bseek(bMin, bMax, (void*)m, (void*)index, _ord_loc_ix);
 
 	// correct index to reference last marker <= target
 	if(i < 0)
@@ -468,7 +468,7 @@ const char *u8txt_unLoc(u8file_t file, unsigned line, unsigned col, size_t *out_
 		return NULL;
 
 	unsigned want[2] = { line, col };
-	const ssize_t negIx =  _bseek(0, file->size.byteCount / MARKER_FREQ, file, want, _ord_loc_pos);
+	const signed long long negIx =  _bseek(0, file->size.byteCount / MARKER_FREQ, file, want, _ord_loc_pos);
 	assert(negIx < 0); // _ord_loc_pos never returns 0
 	const size_t next = -negIx - 1; // first marker after target
 	assert(next > 0); // can't be initial position
