@@ -311,3 +311,22 @@ TEST(Bible_BOM, Bible, f)
 
 	assertPrefix("KJV", f->bytes + l);
 }
+
+TEST(mmapFree)
+{
+	u8file_t f = mmapFile("testdata/kjv.txt");
+	u8txt_free(f);
+}
+
+TEST(mallocFree)
+{
+	u8file_t f = readFile("testdata/kjv.txt");
+	u8txt_free(f);
+}
+
+TEST(nullFree)
+{
+	const char data[] = "THis is meaningless example text.";
+	u8file_t f = u8txt_load(data, sizeof(data) - 1, NULL);
+	u8txt_free(f);
+}
