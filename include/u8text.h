@@ -4,6 +4,9 @@
 #include <stddef.h>
 #include "unic.h"
 
+/** An unordered collection of files for backtracking pointers */
+typedef struct FileList *u8list_t;
+
 /** Information about a byte location */
 typedef struct {
 	/** 1-based line index (i.e. 1 + # of preceding \n characters) */
@@ -50,6 +53,51 @@ struct TextFile
 	const char _opaque[];
 };
 
+//#region File List interface
+
+/** Allocates a new file list
+	@returns An empty file list
+	@returns NULL and sets errno on malloc failure
+*/
+extern u8list_t u8txt_create();
+
+/** Destroys a file list
+	@param files A file list. Noop if NULL.
+	@param freeAll If true, also free every contained file
+*/
+extern void u8txt_destroy(u8list_t files, bool freeAll);
+
+/** Looks up the file containing a character location 
+	@returns That text file
+	@returns NULL if `chr` is not contained in `files`
+*/
+extern u8file_t u8txt_fileof(u8list_t files, const char *chr);
+
+/** Appends a file to a file list
+	@returns 0 on success
+	@returns 1 if the file is already part of the list
+	@returns -1 and sets errno on internal malloc error
+*/
+extern int u8txt_link(u8list_t list, u8file_t file);
+
+/** Removes a file from a list
+	@returns true on success
+	@returns false if the file isn't part of a list
+*/
+extern bool u8txt_unlink(u8list_t list, u8file_t file);
+
+/** Accesses an element in a file list by index.
+	@note The index order is not specified, and elements may change position after each call to `u8txt_link` or `u8txt_unlink`
+	@note Accessing an out-of-bounds index is undefined behaviour
+	@param ix An index between 0 and `u8txt_count(list)`
+*/
+extern u8file_t u8txt_access(u8list_t list, size_t ix);
+
+/** @returns Number of files in `list` */
+extern size_t u8txt_count(u8list_t list);
+
+//#endregion
+
 //#region file init/free
 
 #if _POSIX_SOURCE >= 200112L
@@ -58,6 +106,11 @@ struct TextFile
 	@returns A file containing the entire file referenced by `fd`, or NULL on error
 */
 extern u8file_t u8txt_open(int fd);
+
+/** Prefab for passing a mmap()ed buffer to `u8txt_load()`. 
+	Note that `size` must be exactly what was passed to mmap().
+ */
+extern void u8txt_cleanup_munmap(u8file_t file);
 #endif
 
 /** Opens a buffer as a text file.
@@ -75,12 +128,10 @@ extern u8file_t u8txt_load(const char *bytes, size_t size, cleanup_f cleanup);
 /** Prefab for passing a malloc()ed buffer to `u8txt_load()` */
 extern void u8txt_cleanup_free(u8file_t file);
 
-/** Prefab for passing a mmap()ed buffer to `u8txt_load()`. 
-	Note that `size` must be exactly what was passed to mmap().
- */
-extern void u8txt_cleanup_munmap(u8file_t file);
 
-/** Frees a file and its content. */
+/** Frees a file and its content.
+	@note Does NOT touch any file list it's in, may lead to use-after-free
+ */
 extern void u8txt_free(u8file_t file);
 
 //#endregion

@@ -16,6 +16,9 @@
 /** Number of bytes between each marker */
 #define MARKER_FREQ 2048
 
+/** Allocation grain for `FileList` dynamic array */
+#define FILE_LIST_GRAIN 16
+
 #ifdef __has_builtin
 	#if __has_builtin(__builtin_unreachable)
 		#define UNREACHABLE __builtin_unreachable()
@@ -25,6 +28,36 @@
 #else
 	#define UNUNREACHABLE
 #endif
+
+//#region File List Interface
+/** Simple ordered dynamic array */
+struct FileList 
+{
+	/** Actual number of entries populated in `files` */
+	size_t pop;
+	/** Total capacity of `files` */
+	size_t cap;
+	/** Index of first non-empty string in `files` */
+	size_t firstNonEmpty;
+	u8file_t *files;
+};
+
+u8list_t u8txt_create()
+{
+	return calloc(1, sizeof(struct FileList));
+}
+
+void u8txt_destroy(u8list_t files, bool freeAll)
+{
+	if(! files)
+		return;
+
+	if(freeAll) for(size_t i = 0; i < files->pop; ++i)
+		u8txt_free(files->files[i]);
+
+	free(files->files);
+	free(files);
+}
 
 /** Generic binary search over indices
 	@param lo INCLUSIVE lower bound
@@ -42,7 +75,8 @@ static inline signed long long _bseek(size_t lo, size_t hi, void *list, void *ta
 
 	while(lo <= hi)
 	{
-		size_t mid = lo + (hi - lo)/2 + (hi - lo)%2;
+		size_t diff = hi - lo;
+		size_t mid = lo + diff/2 + diff%2;
 		int cmp = ord(mid, list, target);
 
 		if(cmp < 0)
@@ -54,10 +88,157 @@ static inline signed long long _bseek(size_t lo, size_t hi, void *list, void *ta
 		}
 		else
 			return mid;
+		if(diff == 0)
+			break;
 	}
 	
 	return -(supremum + 1);
 }
+
+/** Compares two files to sort file lists. Considers all overlapping files to be equal.
+	Empty files precede non-empty files but are only considered equal if the files are pointer-equal.
+	@returns -1 if a < b
+	@returns  0 if a == b
+	@returns +1 if a > b
+*/
+static int _txt_cmp(u8file_t a, u8file_t b)
+{	
+	// empty files come before all non-empty files
+	if(a->size.byteCount == 0 && b->size.byteCount == 0)
+	{ // ordering doesn't really matter, only has to be total
+		return ((size_t)a < (size_t)b) ? -1 : 
+				((size_t)a > (size_t)b) ? +1 : 0;
+	}
+	else if(a->size.byteCount == 0)
+		return -1;
+	else if(b->size.byteCount == 0)
+		return +1;
+
+	const char *aHi = a->bytes + a->size.byteCount;
+	const char *bHi = b->bytes + b->size.byteCount;
+
+	return (aHi <= b->bytes) ? -1 :
+			(a->bytes >= bHi) ? +1 : 0;
+}
+
+struct _list_ord_file_ctx
+{
+	u8list_t list;
+	u8file_t file;
+};
+
+/** ord function suited for `_bseek()` */
+static int _list_ord_file(size_t ix, void *_list, void *_file)
+{
+	u8list_t list = _list;
+	u8file_t file = _file;
+
+	u8file_t entry = list->files[ix];
+	return _txt_cmp(entry, file);
+}
+
+/** Prefab for `_bseek()`ing for a file 
+	@return See `_bseek()`
+*/
+static ssize_t _fl_seek(u8list_t list, u8file_t file)
+{
+	return file->size.byteCount 
+		? (list->pop 
+			? _bseek(list->firstNonEmpty, list->pop - 1, list, file, _list_ord_file)
+			: (ssize_t)-1
+		) : (list->firstNonEmpty 
+			? _bseek(0, list->firstNonEmpty - 1, list, file, _list_ord_file) 
+			: -(ssize_t)(list->firstNonEmpty + 1)
+		);
+}
+
+int u8txt_link(u8list_t list, u8file_t file)
+{
+	// assert capacity
+	if(list->pop == list->cap)
+	{
+		u8file_t *newBuf = realloc(list->files, sizeof(u8file_t) * (list->cap + FILE_LIST_GRAIN));
+
+		if(! newBuf)
+			return -1;
+
+		list->files = newBuf;
+		list->cap += FILE_LIST_GRAIN;
+	}
+
+	ssize_t ix = _fl_seek(list, file);
+
+	if(ix >= 0)
+		return +1;
+
+	if(file->size.byteCount == 0)
+		++list->firstNonEmpty;
+
+	ix = -(ix + 1);
+	memmove(list->files + ix + 1, list->files + ix, sizeof(u8file_t) * ( list->pop - ix ));
+	list->files[ix] = file;
+	++list->pop;
+
+	return 0;
+}
+
+bool u8txt_unlink(u8list_t list, u8file_t file)
+{
+	ssize_t ix = _fl_seek(list, file);
+
+	if(ix < 0)
+		return false;
+
+	if(file->size.byteCount == 0)
+		--list->firstNonEmpty;
+	
+	// patch hole
+	memmove(list->files + ix, list->files + ix + 1, sizeof(u8file_t) * (list->pop - ix - 1) );
+	--list->pop;
+
+	if(list->cap - list->pop >= 2*FILE_LIST_GRAIN)
+	{ // shrink buffer
+		u8file_t *newBuf = realloc(list->files, (list->cap - FILE_LIST_GRAIN)*sizeof(u8file_t));
+
+		if(newBuf)
+		{
+			list->cap -= FILE_LIST_GRAIN;
+			list->files = newBuf;
+		}
+	}
+
+	return true;
+}
+
+static int _file_loc(size_t ix, void *_list, void *_chr)
+{
+	u8list_t list = _list;
+	const char *chr = _chr;
+	return -u8txt_loc(list->files[ix], chr, NULL);
+}
+
+u8file_t u8txt_fileof(u8list_t list, const char *chr)
+{
+	if(! list->pop)
+		return NULL; // avoid underflow
+
+	ssize_t ix = _bseek(list->firstNonEmpty, list->pop - 1, list, (void*)chr, _file_loc);
+
+	return ix < 0 ? NULL : list->files[ix];
+}
+
+__nonnull((1))
+u8file_t u8txt_access(u8list_t list, size_t ix)
+{
+	return list->files[ix];
+}
+
+__nonnull((1))
+size_t u8txt_count(u8list_t list)
+{
+	return list->pop;
+}
+//#endregion
 
 static const u8loc_t initialLocation = {
 	.characterIndex = 0,
@@ -282,7 +463,9 @@ void u8txt_cleanup_free(u8file_t file)
 
 void u8txt_free(u8file_t file)
 {
-	file->cleanupCallback(file);
+	if(file->cleanupCallback)
+		file->cleanupCallback(file);
+	
 	free(file);
 }
 //#endregion
