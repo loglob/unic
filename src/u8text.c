@@ -261,16 +261,11 @@ u8file_t u8txt_load(const char *bytes, size_t size, cleanup_f cleanup)
 		.charCount = last.characterIndex
 	};
 
-	// Magic L-expression to overwrite a const-marked field
-	#define SET_FIELD(field) (*(typeof_unqual(field)*)&(field))
-
 	file->udata = NULL;
-	SET_FIELD(file->bytes) = bytes;
-	SET_FIELD(file->size) = siz;
-	SET_FIELD(file->lines) = last.line;
-	SET_FIELD(file->cleanupCallback) = cleanup;
-
-	#undef SET_FIELD
+	*(const char**)&(file->bytes) = bytes;
+	*(u8size_t*)&(file->size) = siz;
+	*(unsigned int*)&(file->lines) = last.line;
+	*(cleanup_f*)&(file->cleanupCallback) = cleanup;
 
 	return file;
 }
