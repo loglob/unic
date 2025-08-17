@@ -86,6 +86,16 @@ extern int u8txt_link(u8list_t list, u8file_t file);
 */
 extern bool u8txt_unlink(u8list_t list, u8file_t file);
 
+/** Accesses an element in a file list by index.
+	@note The index order is not specified, and elements may change position after each call to `u8txt_link` or `u8txt_unlink`
+	@note Accessing an out-of-bounds index is undefined behaviour
+	@param ix An index between 0 and `u8txt_count(list)`
+*/
+extern u8file_t u8txt_access(u8list_t list, size_t ix);
+
+/** @returns Number of files in `list` */
+extern size_t u8txt_count(u8list_t list);
+
 //#endregion
 
 //#region file init/free
