@@ -455,7 +455,9 @@ void u8txt_cleanup_munmap(u8file_t file)
 
 void u8txt_free(u8file_t file)
 {
-	file->cleanupCallback(file);
+	if(file->cleanupCallback)
+		file->cleanupCallback(file);
+	
 	free(file);
 }
 //#endregion
