@@ -13,6 +13,9 @@ TEST_OBJECTS = $(patsubst %.c,%.so, $(wildcard test/*.c))
 out/libunic.so: $(OBJECTS)
 	cc $(OPT_CFLAGS) -shared $^ -o $@
 
+out/libunic.a: $(OBJECTS)
+	ar rs $@ $^
+
 out/libunic-debug.so: $(DEBUG_OBJECTS)
 	cc $(CFLAGS) -g -fPIC -shared $^ -o $@
 
