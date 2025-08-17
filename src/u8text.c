@@ -210,28 +210,22 @@ bool u8txt_unlink(u8list_t list, u8file_t file)
 	return true;
 }
 
+static int _file_loc(size_t ix, void *_list, void *_chr)
+{
+	u8list_t list = _list;
+	const char *chr = _chr;
+	return -u8txt_loc(list->files[ix], chr, NULL);
+}
+
 u8file_t u8txt_fileof(u8list_t list, const char *chr)
 {
 	if(! list->pop)
 		return NULL; // avoid underflow
 
-	size_t lo = list->firstNonEmpty;
-	size_t hi = list->pop - 1; // inclusive
-	
-	while(lo <= hi)
-	{
-		size_t mid = lo + (hi - lo)/2;
-		int c = u8txt_loc(list->files[mid], chr, NULL);
+	ssize_t ix = _bseek(list->firstNonEmpty, list->pop - 1, list, (void*)chr, _file_loc);
 
-		if(c < 0)
-			lo = mid + 1;
-		else if(c > 0)
-			hi = mid - 1;
-		else
-			return list->files[mid];
-	}
-
-	return NULL;
+	return ix < 0 ? NULL : list->files[ix];
+}
 
 __nonnull((1))
 u8file_t u8txt_access(u8list_t list, size_t ix)
