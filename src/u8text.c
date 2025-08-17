@@ -143,8 +143,13 @@ static int _list_ord_file(size_t ix, void *_list, void *_file)
 static ssize_t _fl_seek(u8list_t list, u8file_t file)
 {
 	return file->size.byteCount 
-		? (list->pop ? _bseek(list->firstNonEmpty, list->pop - 1, list, file, _list_ord_file) : 0)
-		: (list->firstNonEmpty ? _bseek(0, list->firstNonEmpty - 1, list, file, _list_ord_file) : 0);
+		? (list->pop 
+			? _bseek(list->firstNonEmpty, list->pop - 1, list, file, _list_ord_file)
+			: (ssize_t)-1
+		) : (list->firstNonEmpty 
+			? _bseek(0, list->firstNonEmpty - 1, list, file, _list_ord_file) 
+			: -(ssize_t)(list->firstNonEmpty + 1)
+		);
 }
 
 int u8txt_link(u8list_t list, u8file_t file)
@@ -188,7 +193,7 @@ bool u8txt_unlink(u8list_t list, u8file_t file)
 		--list->firstNonEmpty;
 	
 	// patch hole
-	memmove(list->files + ix, list->files + ix + 1, list->pop - ix - 1);
+	memmove(list->files + ix, list->files + ix + 1, sizeof(u8file_t) * (list->pop - ix - 1) );
 	--list->pop;
 
 	if(list->cap - list->pop >= 2*FILE_LIST_GRAIN)
