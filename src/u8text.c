@@ -75,7 +75,8 @@ static inline ssize_t _bseek(size_t lo, size_t hi, void *list, void *target, int
 
 	while(lo <= hi)
 	{
-		size_t mid = lo + (hi - lo)/2 + (hi - lo)%2;
+		size_t diff = hi - lo;
+		size_t mid = lo + diff/2 + diff%2;
 		int cmp = ord(mid, list, target);
 
 		if(cmp < 0)
@@ -87,6 +88,8 @@ static inline ssize_t _bseek(size_t lo, size_t hi, void *list, void *target, int
 		}
 		else
 			return mid;
+		if(diff == 0)
+			break;
 	}
 	
 	return -(supremum + 1);
