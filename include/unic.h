@@ -173,6 +173,25 @@ typedef struct
 /** A u8size that imposes no size limit, i.e. reads until a NUL byte. */
 #define NUL_TERMINATED ((u8size_t){ false, (SIZE_MAX >> 1), false, (SIZE_MAX >> 1) })
 
+/** iterators over every character in a utf-8 encoded string of the given size
+	@param ctx Variable name for the iteration context.
+				Contains the fields `chr` of the current character, 
+					`l` the size of the current character (as encoded in the string),
+					`chrIx` the current character index,
+					`byteIx` the current byte index
+	@param string The string to iterate over. Will be evaluated multiple times
+	@param size The size of `string`. Will be evaluated multiple times 
+*/
+#define U8Z_FOREACH(ctx, string, size) for( \
+	struct { uchar_t chr; size_t l; size_t chrIx; size_t byteIx; } ctx = {0} \
+; \
+	ctx.byteIx < (size).byteCount && \
+	ctx.chrIx < (size).charCount && \
+	((ctx.l = u8ndec((string) + ctx.byteIx, (size).byteCount - ctx.byteIx, &ctx.chr)), \
+		ctx.l != 1 || ctx.chr != 0 || (size).bytesExact || (size).charsExact) /* respected NUL terminator */ \
+; \
+	ctx.byteIx += ctx.l, ++ctx.chrIx \
+ )
 
 // #region utf8.c
 
@@ -193,24 +212,24 @@ __nonnull((2))
 */
 extern size_t fputu8(uchar_t c, FILE *f);
 
-/** Like u8dec(), but reads the next utf-8 encoded character in the first n bytes of the given string.
+/** Like `u8dec()`, but reads the next utf-8 encoded character in the first n bytes of the given string.
 	If n is 0, behaves as if it read NUL terminator and returns 0.
 	@param str The utf-8 encoded buffer to read from. May be NULL if n is 0.
 	@param n The maximum amount of bytes to read.
-	@param c The location to store the character in. May be NULL to only determine the length of the next character.
+	@param out_c The location to store the character in. May be NULL to only determine the length of the next character.
 	@returns The amount of bytes read.
 */
-extern size_t u8ndec(const char *str, size_t n, uchar_t *c);
+extern size_t u8ndec(const char *str, size_t n, uchar_t *out_c);
 
 __nonnull((1))
 /** Reads the next utf-8 encoded character from the given string.
 	Note that reading and re-encoding a character may change its length due to improper encoding in source streams.
 	A well-encoded NUL terminator is treated as a character of length 1.
 	@param str The utf-8 encoded buffer to read from. May not be NULL.
-	@param c The location to store the character in. May be NULL to only determine the length of the next character.
+	@param out_c The location to store the character in. May be NULL to only determine the length of the next character.
 	@returns The amount of bytes read.
 */
-extern size_t u8dec(const char *str, uchar_t *c);
+extern size_t u8dec(const char *str, uchar_t *out_c);
 
 /** Writes the given unicode character to the buffer.
 	@param uc The unicode character
