@@ -9,3 +9,5 @@
 /src/ucdb.c
 /src/ucdb.h
 /include/unic.h
+/*.tar.gz
+/testdata

@@ -23,7 +23,7 @@ test/%.so: test/%.c test/*.h ccheck ccheck/*.h include/*
 	cc $(CFLAGS) -g -fPIC -shared $< -o $@
 
 test: ccheck/ccheck out/libunic.so -- ccheck/integer-provider.so $(TEST_OBJECTS)
-	make -C testdata
+	git clone https://github.com/loglob/unic --branch testdata testdata
 	./$^
 
 out/test: test/test.c $(DEBUG_OBJECTS) test/*.h
@@ -61,4 +61,4 @@ uninstall:
 	rm -f /usr/lib/libunic.so /usr/include/unic.h
 
 clean:
-	rm -fr out doc include/unic.h src/ucdb.c src/ucdb.h
+	rm -fr out doc include/unic.h src/ucdb.c src/ucdb.h test/*.so
