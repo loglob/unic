@@ -13,7 +13,7 @@ CFLAGS += -MMD
 OPT_CFLAGS ?= -O3 -march=native -mtune=native -flto
 OPT_CFLAGS += $(CFLAGS)
 
-.PHONY: build
+.PHONY: build codegen
 
 build: out/$(LIB).so out/$(LIB).a
 
@@ -23,6 +23,8 @@ src-gen/ucdb.h src-gen/ucdb.c include/unic.h: codegen/*.py codegen/template/*
 	mkdir -p src-gen
 	cp codegen/out/unic.h include/
 	cp codegen/out/ucdb.c codegen/out/ucdb.h src-gen/
+
+codegen: src-gen/ucdb.h src-gen/ucdb.c include/unic.h
 
 # object files to generate
 OBJECTS = $(patsubst src/%.c, out/%.o, $(wildcard src/*.c)) $(patsubst src-gen/%.c, out/%.o, $(GEN_SRC))
@@ -71,3 +73,7 @@ test: ccheck/ccheck out/$(LIB)-dbg.so -- ccheck/integer-provider.so $(TEST_OBJEC
 
 clean:
 	rm -fr ccheck out src-gen test-out testdata
+
+doc: unic.dox include/unic.h include/u8text.h
+	mkdir -p doc
+	doxygen $<
