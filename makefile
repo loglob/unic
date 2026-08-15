@@ -8,7 +8,7 @@ OBJECTS = $(patsubst src/%.c,out/%.o, $(wildcard src/*.c))
 DEBUG_OBJECTS = $(patsubst %.o,%-debug.o, $(OBJECTS))
 TEST_OBJECTS = $(patsubst %.c,%.so, $(wildcard test/*.c))
 
-.PHONY: test install uninstall --
+.PHONY: test install uninstall codegen --
 
 out/libunic.so: $(OBJECTS)
 	cc $(OPT_CFLAGS) -shared $^ -o $@
@@ -35,6 +35,11 @@ out/%-debug.o: src/%.c src/*.h include/*
 	mkdir -p out
 	cc $(CFLAGS) -g -fPIC -c $< -o $@
 
+src/ucdb.h src/ucdb.c include/unic.h: codegen/*.py codegen/template/*
+	cd codegen; python ./program.py
+	cp codegen/out/ucdb.h codegen/out/ucdb.c src/
+	cp codegen/out/unic.h include/unic.h
+
 doc: unic.dox include/unic.h
 	mkdir -p doc
 	doxygen $<
@@ -43,6 +48,7 @@ install: out/libunic.so
 	cp $< /usr/lib/
 	cp include/unic.h /usr/include/
 
+codegen: src/ucdb.h src/ucdb.c include/unic.h
 
 ccheck/ccheck ccheck/integer-provider.so ccheck/interface.h:
 	if [ ! -d ccheck ]; then git clone https://github.com/loglob/ccheck; fi
