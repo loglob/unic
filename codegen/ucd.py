@@ -3,7 +3,7 @@ import os
 import re
 import urllib.request
 from dataclasses import dataclass
-from typing import Callable, Iterable, Optional, TypeVar
+from typing import Callable, Iterable, Optional, TypeVar, Iterator
 
 URL = "https://www.unicode.org/Public/UCD/latest/ucd/"
 CACHE_DIR = "cache"
