@@ -24,7 +24,7 @@ src-gen/ucdb.h src-gen/ucdb.c include/unic.h: codegen/*.py codegen/template/*
 	cp codegen/out/unic.h include/
 	cp codegen/out/ucdb.c codegen/out/ucdb.h src-gen/
 
-codegen: src-gen/ucdb.h src-gen/ucdb.c include/unic.h
+codegen: src-gen/ucdb.c
 
 # object files to generate
 OBJECTS = $(patsubst src/%.c, out/%.o, $(wildcard src/*.c)) $(patsubst src-gen/%.c, out/%.o, $(GEN_SRC))
@@ -36,7 +36,7 @@ out/$(LIB).so: $(OBJECTS)
 out/$(LIB)-dbg.so: $(DEBUG_OBJECTS)
 	cc -shared -g $(CFLAGS) $^ -o $@
 out/$(LIB).a: $(OBJECTS)
-	ar rcs $@ $<
+	ar rcs $@ $^
 
 out/%.o: src-gen/%.c
 	mkdir -p $(@D)
