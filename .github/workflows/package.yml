@@ -1,0 +1,43 @@
+name: Package and Upload Release Assets
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install doxygen
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y doxygen
+          elif [ "${{ runner.os }}" = "macOS" ]; then
+            brew update
+            brew install doxygen
+          fi
+
+      - name: Build package
+        shell: bash
+        run: |
+          ./native-package.sh ${{ github.ref_name }}
+
+      - name: Upload to existing release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          gh release upload "${GITHUB_REF_NAME}" ./unic-*.tar.gz

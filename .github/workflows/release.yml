@@ -1,26 +1,26 @@
-name: Create Release on Tag
+name: Create release on tag and attach source package
 
 on:
   push:
     tags:
-      - '*'
+      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
-  release:
+  create-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Prepare source package
+        run: ./source-package.sh ${{ github.ref_name }}
 
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y doxygen
-
-      - name: Run package script
-        run: ./package.sh ${{ github.ref_name }}
-
-      - name: Create GitHub Release with artifact
-        uses: softprops/action-gh-release@v1
-        with:
-          files: '*.tar.gz'
-          body: "Release ${{ github.ref_name }}"
+      - name: Create draft release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            unic-*.tar.gz \
+            --title "Release ${GITHUB_REF_NAME}" \
+            --draft \
+            --notes "Automated release for ${GITHUB_REF_NAME}"
