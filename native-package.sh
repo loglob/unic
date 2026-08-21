@@ -8,7 +8,21 @@ fi
 
 set -e
 
-export OPT_CFLAGS="-O3 -march=x86-64-v2 -mtune=generic -flto"
+case "$(uname -s)-$(uname -m)" in
+  Linux-x86_64)
+    MARCH="-march=x86-64-v2"
+    ;;
+  Darwin-arm64)
+    MARCH="-mcpu=apple-m1"
+    ;;
+  Linux-aarch64|Linux-arm64)
+    MARCH="-march=armv8-a"
+    ;;
+  *)
+    ;;
+esac
+
+export OPT_CFLAGS="-O3 $MARCH -mtune=generic -flto"
 make -j4 build
 make doc
 
