@@ -1,0 +1,19 @@
+name: MacOS CI/CD
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: build
+      run: make out/libunic-dbg.so
+    - name: test
+      run: make test
