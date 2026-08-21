@@ -35,5 +35,7 @@ build/%.o: src/%.c src/*.h include/*
 	\$(CC) $FLAGS -O3 -march=native -mtune=native -flto -Iinclude -c $< -o \$@
 EOF
 
-tar -C "$DIR" -czf "unic-$1-source".tar.gz --transform 's|^.||' .
+# this is ugly but tar is incredibly inflexible
+(cd "$DIR"; tar -czf "unic-$1-source".tar.gz *)
+mv "$DIR"/*.tar.gz .
 rm -r "$DIR"

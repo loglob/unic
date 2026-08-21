@@ -76,4 +76,4 @@ clean:
 
 doc: unic.dox include/unic.h include/u8text.h
 	mkdir -p doc
-	doxygen $<
+	doxygen -q $<

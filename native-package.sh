@@ -26,9 +26,14 @@ export OPT_CFLAGS="-O3 $MARCH -mtune=generic -flto"
 make -j4 build
 make doc
 
-tar czf "unic-$1-$(uname -s)-$(uname -m)".tar.gz \
-  README.md \
-  LICENSE \
-  include \
-  --transform 's|^doc/||' doc/man \
-  --transform 's|^out/|lib/|' out/libunic.so out/libunic.a \
+# build package in a temp dir
+DIR="$(mktemp -d)"
+
+cp -r README.md LICENSE include doc/man "$DIR/"
+mkdir "$DIR/lib"
+cp out/libunic.so out/libunic.a "$DIR/lib/"
+
+# this is ugly but tar is incredibly inflexible
+(cd "$DIR"; tar -czf "unic-$1-$(uname -s)-$(uname -m)".tar.gz *)
+mv "$DIR"/*.tar.gz .
+rm -r "$DIR"
