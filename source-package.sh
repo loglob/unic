@@ -28,11 +28,11 @@ lib/libunic.a: \$(OBJECTS)
 
 lib/libunic.so: \$(OBJECTS)
 	mkdir -p lib
-	cc -flto -shared \$^ -o \$@ 
+	\$(CC) -flto -shared \$^ -o \$@ 
 
 build/%.o: src/%.c src/*.h include/*
 	mkdir -p build
-	cc $FLAGS -O3 -march=native -mtune=native -flto -Iinclude -c $< -o \$@
+	\$(CC) $FLAGS -O3 -march=native -mtune=native -flto -Iinclude -c $< -o \$@
 EOF
 
 tar -C "$DIR" -czf "unic-$1-source".tar.gz --transform 's|^.||' .
