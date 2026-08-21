@@ -172,7 +172,7 @@ TEST(GG_knownSize, Grundgesetz, f)
 	assertTrue(f->size.byteCount <= GG_CHARS * UTF8_MAX);
 }
 
-__nonnull((1,2))
+NONNULL_UNIC(1,2)
 static inline void assertPrefix(const char *prefix, const char *string)
 {
 	assertTrue(u8_prefix(prefix, string), " but got: '%.10s…'", string);

@@ -226,13 +226,13 @@ u8file_t u8txt_fileof(u8list_t list, const char *chr)
 	return ix < 0 ? NULL : list->files[ix];
 }
 
-__nonnull((1))
+NONNULL_UNIC(1)
 u8file_t u8txt_access(u8list_t list, size_t ix)
 {
 	return list->files[ix];
 }
 
-__nonnull((1))
+NONNULL_UNIC(1)
 size_t u8txt_count(u8list_t list)
 {
 	return list->pop;

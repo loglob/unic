@@ -6,7 +6,6 @@ OPTIMIZE_OUTPUT_FOR_C  = YES
 ENABLE_PREPROCESSING   = YES
 MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
-PREDEFINED             = __nonnull(x)=
 EXTRACT_ALL            = YES
 STRIP_FROM_PATH        = ./include/
 GENERATE_MAN           = YES

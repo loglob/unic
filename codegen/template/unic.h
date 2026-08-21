@@ -506,5 +506,4 @@ NONNULL_UNIC(6)
 extern u8size_t u8z_strmap(const char *str, u8size_t size, char *dst, size_t cap, bool nulTerminate, uchar_t (*map_f)(uchar_t));
 
 // #endregion u8sized.c
-#undef NONNULL_UNIC
 #endif
