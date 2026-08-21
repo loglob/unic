@@ -79,9 +79,22 @@ typedef struct
 	ctx.byteIx += ctx.l, ++ctx.chrIx \
  )
 
+/** create a local macro for the non-null attribute */
+#if defined(__has_attribute)
+#  if __has_attribute(nonnull)
+#    define NONNULL_UNIC(...) __attribute__((nonnull(__VA_ARGS__)))
+#  else
+#    define NONNULL_UNIC(...)
+#  endif
+#elif defined(__GNUC__)
+#  define NONNULL_UNIC(...) __nonnull((__VA_ARGS__))
+#else
+#  define NONNULL_UNIC(...)
+#endif
+
 // #region utf8.c
 
-__nonnull((1))
+NONNULL_UNIC(1)
 /** Reads the next unicode character from the given utf-8 encoded steam.
 	Returns UEOF on reading EOF.
 	@param f The file stream. May not be NULL.
@@ -89,7 +102,7 @@ __nonnull((1))
 */
 extern uchar_t fgetu8(FILE *f);
 
-__nonnull((2))
+NONNULL_UNIC(2)
 /** Writes the given unicode character to the given utf-8 encoded stream.
 	Always writes either nothing on failure or an entire character on success.
 	@param c A unicode character
@@ -107,7 +120,7 @@ extern size_t fputu8(uchar_t c, FILE *f);
 */
 extern size_t u8ndec(const char *str, size_t n, uchar_t *out_c);
 
-__nonnull((1))
+NONNULL_UNIC(1)
 /** Reads the next utf-8 encoded character from the given string.
 	Note that reading and re-encoding a character may change its length due to improper encoding in source streams.
 	A well-encoded NUL terminator is treated as a character of length 1.
@@ -123,7 +136,7 @@ extern size_t u8dec(const char *str, uchar_t *out_c);
 	@returns The amount of bytes written. */
 extern size_t u8enc(uchar_t uc, char *buf);
 
-__nonnull((3))
+NONNULL_UNIC(3)
 /** Encodes a character with a fixed number of bytes, potentially over-encoding.
 	Drops high bits if too few bytes are available.
 	@param uc Character to incode
@@ -189,7 +202,7 @@ extern uchar_t uchar_upper(uchar_t c);
 
 // #region u8string.c
 
-__nonnull((1))
+NONNULL_UNIC(1)
 /** Determines the amount of unicode characters in the given NUL-terminated UTF-8 string.
 	Does not count the final NUL terminator.
 	
@@ -198,7 +211,7 @@ __nonnull((1))
 */
 extern size_t u8_strlen(const char *str);
 
-__nonnull((1))
+NONNULL_UNIC(1)
 /** Copies the utf-8 encoded string str to dst.
 	Every character written to dst is guaranteed to be utf-8 normalized.
 	If `str` is already normalized, you should use `strcpy` instead.
@@ -214,7 +227,7 @@ __nonnull((1))
 */
 extern u8size_t u8_strcpy(const char *str, char *dst, size_t cap, bool nulTerminate);
 
-__nonnull((1))
+NONNULL_UNIC(1)
 /** Looks up a character index in a UTF-8 encoded string.
 
 	@param str The NUL-terminated UTF-8 string.
@@ -232,7 +245,7 @@ extern const char *u8_strpos(const char *str, size_t pos);
 */
 extern uchar_t u8_strat(const char *str, size_t pos);
 
-__nonnull((1))
+NONNULL_UNIC(1)
 /** Finds the first occurrence of the given character in the given utf-8 encoded string.
 	Note that, for utf-8 normalized strings, strstr achieves the same and will be more efficient.
 	@param str The string. May not be NULL.
@@ -242,7 +255,7 @@ __nonnull((1))
 */
 extern const char *u8_strchr(const char *str, uchar_t chr);
 
-__nonnull((1))
+NONNULL_UNIC(1)
 /** Finds the first occurrence of the given character, or a case-insensitive variant of it, in the given utf-8 encoded string.
 	see `uchar_alike()` for specifics on case-insensitivity.
 	@param str The string. May not be NULL.
@@ -252,7 +265,7 @@ __nonnull((1))
 */
 extern const char *u8_strchrI(const char *str, uchar_t chr);
 
-__nonnull((1))
+NONNULL_UNIC(1)
 /** Finds the last occurrence of the given character in the given utf-8 encoded string.
 	@param str The string. May not be NULL.
 	@param chr The character to find
@@ -261,7 +274,7 @@ __nonnull((1))
 */
 extern const char *u8_strrchr(const char *str, uchar_t chr);
 
-__nonnull((1))
+NONNULL_UNIC(1)
 /** Finds the last occurrence of the given character, or a case-insensitive variant of it, in the given utf-8 encoded string.
 	see uchar_alike() for specifics on case-insensitivity.
 	@param str The string. May not be NULL.
@@ -271,7 +284,7 @@ __nonnull((1))
 */
 extern const char *u8_strrchrI(const char *str, uchar_t chr);
 
-__nonnull((1,2))
+NONNULL_UNIC(1,2)
 /** Finds the first occurrence of the given substring in the given utf-8 encoded string.
 	Note that, for utf-8 normalized strings, strstr achieves the same and will be more efficient.
 	@param haystack The string to search in. May not be NULL.
@@ -281,7 +294,7 @@ __nonnull((1,2))
 */
 extern const char *u8_strstr(const char *haystack, const char *needle);
 
-__nonnull((1,2))
+NONNULL_UNIC(1,2)
 /** Finds the last occurrence of the given substring in the given utf-8 encoded string.
 	Note that, for utf-8 normalized strings, a loop based on strstr achieves the same and will be more efficient.
 	@param haystack The string to search in. May not be NULL.
@@ -291,7 +304,7 @@ __nonnull((1,2))
 */
 extern const char *u8_strrstr(const char *haystack, const char *needle);
 
-__nonnull((1,2))
+NONNULL_UNIC(1,2)
 /** Finds the first occurrence of a case-insensitive variation of the given substring in the given string.
 	See uchar_alike() for specifics on case-insensitivity.
 	@param haystack The string to search in. May not be NULL.
@@ -301,7 +314,7 @@ __nonnull((1,2))
 */
 extern const char *u8_strstrI(const char *haystack, const char *needle);
 
-__nonnull((1,2))
+NONNULL_UNIC(1,2)
 /** Finds the last occurrence of a case-insensitive variation of the given substring in the given string.
 	See uchar_alike() for specifics on case-insensitivity.
 	@param haystack The string to search in. May not be NULL.
@@ -311,7 +324,7 @@ __nonnull((1,2))
 */
 extern const char *u8_strrstrI(const char *haystack, const char *needle);
 
-__nonnull((1,2))
+NONNULL_UNIC(1,2)
 /** Determines if two utf-8 encoded strings contain the same characters.
 	Note that, for utf-8 normalized strings, strcmp achieves the same and is more efficient.
 	@param a A string. May not be NULL.
@@ -323,7 +336,7 @@ extern bool u8_streq(const char *a, const char *b);
 /** Determines if the first `n` characters of two strings are equal. */
 extern bool u8_strneq(const char *a, const char *b, size_t n);
 
-__nonnull((1,2))
+NONNULL_UNIC(1,2)
 /** Determines if two utf-8 encoded strings contain the same characters.
 	Case-insensitive, see uchar_alike() for specifics.
 	@param a A NUL-terminated string. May not be NULL.
@@ -335,21 +348,21 @@ extern bool u8_streqI(const char *a, const char *b);
 /** Determines if the first `n` characters of two strings are equal, ignoring case. */
 extern bool u8_strneqI(const char *a, const char *b, size_t n);
 
-__nonnull((1,2))
+NONNULL_UNIC(1,2)
 /** Determines if one utf-8 encoded string is a prefix of another.
 	Note that, for normalized strings, `strncmp` achieves the same and is more efficient.
 	@param prefix The prefix
 	@param full The full string
 */
 extern bool u8_prefix(const char *prefix, const char *full);
-__nonnull((1,2))
+NONNULL_UNIC(1,2)
 /** Case-insensitive `u8_prefix`
 	@param prefix The prefix
 	@param full The full string
 */
 extern bool u8_prefixI(const char *prefix, const char *full);
 
-__nonnull((1))
+NONNULL_UNIC(1)
 /** Determines if the given utf-8 encoded string is normalized utf-8.
 	This means that every character is encoded with its normal length.
 	Specifically NUL may be encoded as 2 bytes.
@@ -360,7 +373,7 @@ __nonnull((1))
 */
 extern bool u8_isnorm(const char *str);
 
-__nonnull((1))
+NONNULL_UNIC(1)
 /** Determines the longest prefix of `str` that is entirely normalized.
 
 	@see u8_isnorm	
@@ -369,7 +382,7 @@ __nonnull((1))
 */
 extern u8size_t u8_chknorm(const char *str);
 
-__nonnull((1))
+NONNULL_UNIC(1)
 /** Determines if the given utf-8 encoded string is valid utf-8.
 	This means that the every character in the string is assigned in the unicode standard.
 	Private use characters are considered valid.
@@ -379,7 +392,7 @@ __nonnull((1))
 */
 extern bool u8_isvalid(const char *str);
 
-__nonnull((1))
+NONNULL_UNIC(1)
 /** Determines the longest prefix of `str` that is entirely normalized.
 
 	@see u8_isvalid	
@@ -388,7 +401,7 @@ __nonnull((1))
 */
 extern u8size_t u8_chkvalid(const char *str);
 
-__nonnull((1,5))
+NONNULL_UNIC(1,5)
 /** Applies map_f to every character in the utf-8 encoded string and writes them to dst.
 
 	Every character written to dst is guaranteed to be utf-8 normalized.
@@ -489,8 +502,9 @@ extern bool u8z_isvalid(const char *str, u8size_t size);
 extern u8size_t u8z_chkvalid(const char *str, u8size_t size);
 
 /** Variant of `u8_strmap()` on a sized prefix */
-__nonnull((6))
+NONNULL_UNIC(6)
 extern u8size_t u8z_strmap(const char *str, u8size_t size, char *dst, size_t cap, bool nulTerminate, uchar_t (*map_f)(uchar_t));
 
 // #endregion u8sized.c
+#undef NONNULL_UNIC
 #endif
