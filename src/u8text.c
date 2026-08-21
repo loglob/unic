@@ -338,7 +338,11 @@ u8file_t u8txt_open(int fd)
 		return u8txt_load(NULL, 0, NULL);
 
 	// attempt mmap()
-	void *const mapping = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE | MAP_POPULATE, fd, 0);
+	int flags = MAP_PRIVATE;
+	#ifdef MAP_POPULATE // linux-specific; tells OS we plan to iterate the entire file immediately
+	flags |= MAP_POPULATE;
+	#endif
+	void *const mapping = mmap(NULL, st.st_size, PROT_READ,  flags, fd, 0);
 
 	if(mapping == MAP_FAILED)
 	{
