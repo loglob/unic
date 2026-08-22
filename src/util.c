@@ -22,10 +22,12 @@ bool uchar_alike(uchar_t a, uchar_t b)
 	if(!ea || !eb)
 		return false;
 
-	const uchar_t ua = a + ea->uppercaseDelta;
-	const uchar_t ub = b + eb->uppercaseDelta;
-	const uchar_t la = a + ea->lowercaseDelta;
-	const uchar_t lb = b + eb->lowercaseDelta;
+	const struct ucdb_delta da = ucdb_deltas[ea->deltaIndex];
+	const struct ucdb_delta db = ucdb_deltas[eb->deltaIndex];
+	const uchar_t ua = a + da.uppercaseDelta;
+	const uchar_t ub = b + db.uppercaseDelta;
+	const uchar_t la = a + da.lowercaseDelta;
+	const uchar_t lb = b + db.lowercaseDelta;
 
 	// im fairly certain that no 2 characters actually match the u_ = l_ rules, they are mostly for completeness
 	return ua == lb || ua == b || ua == ub || a == ub
@@ -58,11 +60,13 @@ int u_isspace(uchar_t c)
 uchar_t uchar_lower(uchar_t c)
 {
 	const struct ucdb_entry *e = ucdb_get(c);
-	return e ? c + e->lowercaseDelta : c;
+
+	return e ? c + ucdb_deltas[e->deltaIndex].lowercaseDelta : c;
 }
 
 uchar_t uchar_upper(uchar_t c)
 {
 	const struct ucdb_entry *e = ucdb_get(c);
-	return e ? c + e->uppercaseDelta : c;
+
+	return e ? c + ucdb_deltas[e->deltaIndex].uppercaseDelta : c;
 }

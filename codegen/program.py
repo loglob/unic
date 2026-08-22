@@ -4,9 +4,10 @@
 """
 import os
 import re
-import ucd
 import math
+from ucd import *
 from datetime import datetime
+from typing import List
 
 IN_DIR = "template"
 OUT_DIR = "out"
@@ -18,72 +19,35 @@ def bits(value: int) -> int:
     """The minimum number of bits required to represent an integer"""
     return int(math.ceil(math.log2(abs(value) + 1)))
 
+def indexBits(into : List[any]) -> int:
+    """The minimum number of bits required to represent an index into an array"""
+    return bits(len(into) - 1)
+
 def to_hex_c(value: int) -> str:
     """Format an integer as a C hex literal"""
     return "0x" + format(value, "04X")
 
-def _gc_enum() -> str:
+def _gc_enum(db : UCDB) -> str:
     """Build the `enum unic_gc` body"""
 
     out: list[str] = []
     counter = 0
 
-    for gc in [g for g in ucd.GENERAL_CATEGORIES.values() if g.is_super]:
-        out.append(f"{gc.full_id} = {counter} << UNIC_GC_SUB_BITS,")
-        out.append(f"/** Alias for {gc.full_id} */")
-        out.append(f"{gc.short_id} = {gc.full_id},")
+    for maj in db.major_categories:
+        out.append(f"{maj.full_id} = {counter} << UNIC_GC_SUB_BITS,")
+        out.append(f"/** Alias for {maj.full_id} */")
+        out.append(f"{maj.short_id} = {maj.full_id},")
 
-        for sub in gc.sub_categories:
-            out.append(f"{sub.full_id},")
-            out.append(f"/** Alias for {sub.full_id} */")
-            out.append(f"{sub.short_id} = {sub.full_id},")
+        for gc in maj.minor_categories:
+            out.append(f"{gc.full_id},")
+            out.append(f"/** Alias for {gc.full_id} */")
+            out.append(f"{gc.short_id} = {gc.full_id},")
 
         counter += 1
 
     return '\t' + "\n\t".join(out)
 
-def expand(key : str) -> str:
-    """ Computes the replacement of the given placeholder key """
-    super_categories = [g for g in ucd.GENERAL_CATEGORIES.values() if g.is_super]
-    super_bits = bits(len(super_categories) - 1)
-    sub_bits = bits(max(len(g.sub_categories) for g in super_categories))
-
-    match key:
-        case "version":
-            return f"{ucd.VERSION[0]}{ucd.VERSION[1]}{ucd.VERSION[2]}"
-        case "version_string": 
-            return '"' + ucd.version_string() + '"'
-        case "max":
-            return to_hex_c(max(ucd.CODEPOINTS))
-        case "bit":
-            return str(bits(max(ucd.CODEPOINTS)))
-        case "sub_bits":
-            return str(sub_bits)
-        case "gc_bits":
-            return str(super_bits + sub_bits)
-        case "GC":
-            return _gc_enum()
-        case "UCDB":
-            return '\t' + ',\n\t'.join([
-                f"{{ {to_hex_c(chr.value)}, {ucd.GeneralCategory.PREFIX}_{chr.general_category.upper()}, {chr.simple_uppercase_delta}, {chr.simple_lowercase_delta} }}"
-                for chr in ucd.CODEPOINTS.values()
-            ])
-        case "count":
-            return str(len(ucd.CODEPOINTS))
-        case "ucd_bits":
-            return str(bits(max(c.simple_uppercase_delta for c in ucd.CODEPOINTS.values())) + 1)
-        case "lcd_bits":
-            return str(bits(max(c.simple_lowercase_delta for c in ucd.CODEPOINTS.values())) + 1)
-        case "max_direct":
-            return str(next(
-                    i
-                    for i, c in enumerate(ucd.CODEPOINTS.values())
-                    if c.value != i
-                ) - 1)
-        case _:
-            raise KeyError(f"Unknown template placeholder: {key}")
-
-def process(path: str) -> None:
+def process(path: str, expand : Callable[[str], str]) -> None:
     """Substitutes placeholders in a single template"""
 
     filename = os.path.basename(path)
@@ -106,11 +70,59 @@ def main() -> None:
 
     os.makedirs(OUT_DIR, exist_ok=True)
 
-    ucd.load()
-    print(f"Loaded Unicode Character Database Version {ucd.version_string()}")
+    db : UCDB = load()
+    print(f"Loaded Unicode Character Database Version {db.version_string}")
+
+    deltas = sorted({ c.delta for c in db.codepoints }, key= lambda xs: sum(abs(x) for x in xs))
+    sub_bits = max(indexBits(maj.minor_categories) for maj in db.major_categories)
+
+    def expand(key : str) -> str:
+        """ Computes the replacement of the given placeholder key """
+
+        match key:
+            case "version":
+                return "%u%u%u" % tuple(db.version)
+            case "version_string": 
+                return '"%s"' % db.version_string
+            case "max":
+                return '0x%04X' % db.max_codepoint
+            case "bit":
+                return str(bits(db.max_codepoint))
+            case "sub_bits":
+                return str(sub_bits)
+            case "gc_bits":
+                return str(indexBits(db.major_categories) + sub_bits)
+            case "GC":
+                return _gc_enum(db)
+            case "UCDB":
+                return ',\n\t'.join(
+                    "{ 0x%04X, %s, %d }" % (c.value, c.general_category.short_id, deltas.index(c.delta))
+                    for c in db.codepoints
+                )
+            case "UCDB_DELTAS":
+                return ',\n\t'.join(
+                    "{ %d, %d }" % tuple(d)
+                    for d in deltas
+                )
+            case "count":
+                return str(len(db.codepoints))
+            case "ucd_bits":
+                return str(bits(max(c.simple_uppercase_delta for c in db.codepoints)) + 1)
+            case "lcd_bits":
+                return str(bits(max(c.simple_lowercase_delta for c in db.codepoints)) + 1)
+            case "delta_ix_bits":
+                return str(indexBits(deltas))
+            case "max_direct":
+                return str(next(
+                        i
+                        for i, c in enumerate(db.codepoints)
+                        if c.value != i
+                    ) - 1)
+            case _:
+                raise KeyError(f"Unknown template placeholder: {key}")
 
     templates = [os.path.join(IN_DIR, f) for f in sorted(os.listdir(IN_DIR))]
-    ucd.progress("Processing Templates...", templates, lambda f: process(f))
+    progress("Processing Templates...", templates, lambda f: process(f, expand))
 
 if __name__ == "__main__":
     main()

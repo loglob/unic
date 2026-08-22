@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include "ucdb.h"
 
+extern const struct ucdb_entry ucdb[];
+
 const struct ucdb_entry *ucdb_get(uchar_t u)
 {
 	if(u <= UCDB_DIRECT_MAX)
@@ -27,8 +29,10 @@ const struct ucdb_entry *ucdb_get(uchar_t u)
 	return NULL;
 }
 
-const struct ucdb_entry ucdb[] =
-{
-$UCDB
+const struct ucdb_delta ucdb_deltas[] = {
+	$UCDB_DELTAS
 };
 
+const struct ucdb_entry ucdb[] = {
+	$UCDB
+};
