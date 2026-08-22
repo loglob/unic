@@ -384,3 +384,27 @@ u8size_t u8z_strmap(const char *str, u8size_t size, char *dst, size_t cap, bool 
 
 	return (u8size_t){ .bytesExact = !truncated, .byteCount = bytes, .charsExact = !truncated, .charCount = chars };
 }
+
+uint64_t u8z_hash(const char *str, u8size_t size)
+{
+	uint64_t acc = 5381;
+
+	// djb2
+	SCAN(str, size, {
+		acc = (acc << 5) + acc + c;
+	})
+
+	return acc;
+}
+
+uint64_t u8z_hashF(const char *str, u8size_t size, uchar_t (*map_f)(uchar_t))
+{
+	uint64_t acc = 5381;
+
+	// djb2
+	SCAN(str, size, {
+		acc = (acc << 5) + acc + map_f(c);
+	})
+
+	return acc;
+}

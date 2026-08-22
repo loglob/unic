@@ -420,6 +420,21 @@ NONNULL_UNIC(1,5)
 */
 extern u8size_t u8_strmap(const char *str, char *dst, size_t cap, bool nulTerminate, uchar_t (*map_f)(uchar_t));
 
+/** Computes a hash value for a utf-8 encoded string.
+
+ 	The result is equal regardless of how the string is encoded, or the host system. 
+
+	If `u8_streq()` is true for two strings, their hash values must be equal.
+*/
+extern uint64_t u8_hash(const char *str);
+
+/** Variant of u8_hash that applies a mapping function inline.
+
+	@returns The result of applying u8_hash to the result of u8_strmap with the given mapping. 
+*/
+NONNULL_UNIC(2)
+extern uint64_t u8_hashF(const char *str, uchar_t (*map_f)(uchar_t));
+
 // #endregion u8string.c
 
 // #region u8sized.c
@@ -504,6 +519,13 @@ extern u8size_t u8z_chkvalid(const char *str, u8size_t size);
 /** Variant of `u8_strmap()` on a sized prefix */
 NONNULL_UNIC(6)
 extern u8size_t u8z_strmap(const char *str, u8size_t size, char *dst, size_t cap, bool nulTerminate, uchar_t (*map_f)(uchar_t));
+
+/** Variant of `u8_hash()` on a sized prefix  */
+extern uint64_t u8z_hash(const char *str, u8size_t size);
+
+/** Variant of `u8_hashF()` on a sized prefix */
+NONNULL_UNIC(3)
+extern uint64_t u8z_hashF(const char *str, u8size_t size, uchar_t (*map_f)(uchar_t));
 
 // #endregion u8sized.c
 #endif

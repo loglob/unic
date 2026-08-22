@@ -112,3 +112,13 @@ bool u8_isvalid(const char *str)
 {
 	return u8z_isvalid(str, NUL_TERMINATED);
 }
+
+uint64_t u8_hash(const char *str)
+{
+	return u8z_hash(str, NUL_TERMINATED);
+}
+
+uint64_t u8_hashF(const char *str, uchar_t (*map_f)(uchar_t))
+{
+	return u8z_hashF(str, NUL_TERMINATED, map_f);
+}
