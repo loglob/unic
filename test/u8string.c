@@ -192,3 +192,68 @@ TEST(partial_chars, struct Codepoint, chr)
 			assertUEq(1, u8ndec(buf + off, n, NULL));
 	}
 }
+
+TEST(hash_is_pure, str_t, str)
+{
+	assertUEq(u8_hash(str.bytes), u8_hash(str.bytes));
+}
+
+TEST(hash_distinguishes_char_prefixes, str_t, str)
+{
+	for(size_t n = 0; n + 1 <= str.count; ++n)
+		assertUNEq(u8z_hash(str.bytes, EXACT_CHARS(n)), u8z_hash(str.bytes, EXACT_CHARS(n + 1)));
+}
+
+TEST(hash_distinguishes_byte_prefixes, str_t, str)
+{
+	for(size_t n = 0; n + 1 <= str.size; ++n)
+		assertUNEq(u8z_hash(str.bytes, EXACT_BYTES(n)), u8z_hash(str.bytes, EXACT_BYTES(n + 1)));
+}
+
+static uchar_t id(uchar_t chr)
+{
+	return chr;
+}
+
+TEST(hashF_under_identity, str_t, _str)
+{
+	const char *const str = _str.bytes;
+
+	assertUEq(u8_hash(str), u8_hashF(str, id));
+
+	for(size_t n = 0; n + 1 <= _str.count; ++n)
+		assertUEq(u8z_hash(str, EXACT_CHARS(n)), u8z_hashF(str, EXACT_CHARS(n), id));
+
+	for(size_t n = 0; n + 1 <= _str.size; ++n)
+		assertUEq(u8z_hash(str, EXACT_BYTES(n)), u8z_hashF(str, EXACT_BYTES(n), id));
+}
+
+TEST(hashF_lower)
+{
+	const char *uppercase = "FooBar";
+	const char *lowercase = "foobar";
+	assertUEq(u8_hash(lowercase), u8_hashF(uppercase, uchar_lower));
+}
+
+TEST(hash_normalizes)
+{
+	const char normalized[] = "foobar";
+	char overEncoded[sizeof(normalized)*2] = {};
+
+	for(size_t i = 0; i < sizeof(normalized) - 1; ++i) 
+		u8nenc(normalized[i], 2, overEncoded + 2*i);
+
+	assertTrue(u8_streq(normalized, overEncoded));
+	assertUEq(u8_hash(normalized), u8_hash(overEncoded));
+}
+
+TEST(hash_prefix)
+{
+	const char *a = "foobar";
+	const char *b = "foosball";
+	
+	assertUEq(u8z_hash(a, EXACT_CHARS(1)), u8z_hash(b, EXACT_CHARS(1)));
+	assertUEq(u8z_hash(a, EXACT_CHARS(2)), u8z_hash(b, EXACT_CHARS(2)));
+	assertUEq(u8z_hash(a, EXACT_CHARS(3)), u8z_hash(b, EXACT_CHARS(3)));
+	assertUNEq(u8z_hash(a, EXACT_CHARS(4)), u8z_hash(b, EXACT_CHARS(4)));
+}
