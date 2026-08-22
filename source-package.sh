@@ -34,6 +34,7 @@ build/%.o: src/%.c src/*.h include/*
 	mkdir -p build
 	\$(CC) $FLAGS -O3 -march=native -mtune=native -flto -Iinclude -c $< -o \$@
 EOF
+echo "$1" > "$DIR/version"
 
 # this is ugly but tar is incredibly inflexible
 (cd "$DIR"; tar -czf "unic-$1-source".tar.gz *)

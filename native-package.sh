@@ -32,6 +32,7 @@ DIR="$(mktemp -d)"
 cp -r README.md LICENSE include doc/man "$DIR/"
 mkdir "$DIR/lib"
 cp out/libunic.so out/libunic.a "$DIR/lib/"
+echo "$1" > "$DIR/version"
 
 # this is ugly but tar is incredibly inflexible
 (cd "$DIR"; tar -czf "unic-$1-$(uname -s)-$(uname -m)".tar.gz *)
