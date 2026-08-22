@@ -200,8 +200,9 @@ def _download(filename: str, lines : Dict[str, str]) -> str:
 
     with urllib.request.urlopen(URL + filename) as response, open(temp_path, "wb") as out_file:
         r = response.read()
-        lines[filename] = r.splitlines()
         out_file.write(r)
+        r = r.decode('utf-8')
+        lines[filename] = r.splitlines()
 
     os.rename(temp_path, out_path)
 
