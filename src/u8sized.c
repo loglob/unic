@@ -397,6 +397,11 @@ uint64_t u8z_hash(const char *str, u8size_t size)
 	return acc;
 }
 
+uint64_t u8z_hashI(const char *str, u8size_t size)
+{
+	return u8z_hashF(str, size, uchar_canonical);
+}
+
 uint64_t u8z_hashF(const char *str, u8size_t size, uchar_t (*map_f)(uchar_t))
 {
 	uint64_t acc = 5381;

@@ -168,7 +168,7 @@ extern bool uchar_alike(uchar_t a, uchar_t b);
 	If `uchar_alike(a,b)` is true, then `uchar_canonical(b) == uchar_canonical(a)` will be true.
 	Consequently, if `u8_streqI(as,bs)` is true, mapping both strings under `uchar_canonical` will produce the same string.
 	
-	@note This mapping is distinct form `uchar_lower` and `uchar_upper` and has no reliable semantics regarding character interpretation.
+	@note This mapping is distinct from `uchar_lower` and `uchar_upper`, and has no reliable semantics regarding character interpretation.
 			Do not use for human-facing output.
 */
 extern uchar_t uchar_canonical(uchar_t c);
@@ -437,6 +437,9 @@ extern u8size_t u8_strmap(const char *str, char *dst, size_t cap, bool nulTermin
 */
 extern uint64_t u8_hash(const char *str);
 
+/** Variant of `u8_hash` that returns equal hashes for `u8_streqI`-equal strings. */
+extern uint64_t u8_hashI(const char *str);
+
 /** Variant of u8_hash that applies a mapping function inline.
 
 	@returns The result of applying u8_hash to the result of u8_strmap with the given mapping. 
@@ -529,8 +532,11 @@ extern u8size_t u8z_chkvalid(const char *str, u8size_t size);
 NONNULL_UNIC(6)
 extern u8size_t u8z_strmap(const char *str, u8size_t size, char *dst, size_t cap, bool nulTerminate, uchar_t (*map_f)(uchar_t));
 
-/** Variant of `u8_hash()` on a sized prefix  */
+/** Variant of `u8_hash()` on a sized prefix */
 extern uint64_t u8z_hash(const char *str, u8size_t size);
+
+/** Variant of `u8_hashI()` on a sized prefix */
+extern uint64_t u8z_hashI(const char *str, u8size_t size);
 
 /** Variant of `u8_hashF()` on a sized prefix */
 NONNULL_UNIC(3)
