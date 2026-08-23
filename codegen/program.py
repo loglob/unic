@@ -104,6 +104,14 @@ def main() -> None:
                     "{ %d, %d }" % tuple(d)
                     for d in deltas
                 )
+            case "CANONICAL_SPECIAL":
+                alike = db.alike_sets()
+
+                return '\n\t\t'.join(
+                    "case 0x%04X: return 0x%04X;" % (c.value, a)
+                    for (c,a) in ((c, min(x.value for x in alike[c.value])) for c in db.codepoints)
+                    if a not in (c.value, c.simple_lowercase_mapping, c.simple_uppercase_mapping)
+                )
             case "count":
                 return str(len(db.codepoints))
             case "ucd_bits":

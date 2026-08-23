@@ -164,6 +164,15 @@ extern enum unic_gc uchar_class(uchar_t c);
 */
 extern bool uchar_alike(uchar_t a, uchar_t b);
 
+/** Returns a canonical mapping for a character.
+	If `uchar_alike(a,b)` is true, then `uchar_canonical(b) == uchar_canonical(a)` will be true.
+	Consequently, if `u8_streqI(as,bs)` is true, mapping both strings under `uchar_canonical` will produce the same string.
+	
+	@note This mapping is distinct form `uchar_lower` and `uchar_upper` and has no reliable semantics regarding character interpretation.
+			Do not use for human-facing output.
+*/
+extern uchar_t uchar_canonical(uchar_t c);
+
 /** Determines if two unicode character classes are the same or compatible
 	@param general A general category, may be a major category
 	@param specific A general category

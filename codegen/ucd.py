@@ -3,7 +3,7 @@ import os
 import re
 import urllib.request
 from dataclasses import dataclass
-from typing import Callable, Iterable, Optional, TypeVar, Iterator, List, Tuple, Dict
+from typing import Callable, Iterable, Optional, TypeVar, Iterator, List, Tuple, Dict, Set
 
 URL = "https://www.unicode.org/Public/UCD/latest/ucd/"
 CACHE_DIR = "cache"
@@ -95,6 +95,39 @@ class UCDB:
     def max_codepoint(self) -> int:
         """ The maximum allocated codepoint """
         return max(c.value for c in self.codepoints)
+
+    def alike_sets(self) -> Dict[int, Set[Codepoint]]:
+        """ Associates each codepoint with a set of transitively alike codepoints """
+        byMember : Dict[int, Set[Codepoint]] = { c.value: {c} for c in self.codepoints }
+        delta = True
+
+        while delta:
+            delta = False
+            print("alike merge iteration...")
+
+            for c in self.codepoints:
+                diff = { c.value, c.simple_lowercase_mapping, c.simple_uppercase_mapping }
+
+                if len(diff) <= 1:
+                    continue
+            
+                toMerge = list({ id(x): x for x in [ byMember[k] for k in diff ]}.values())
+
+                if len(toMerge) <= 1:
+                    continue
+
+                acc = toMerge[0]
+                b4 = len(acc)
+
+                for m in toMerge[1:]:
+                    acc.update(m)
+
+                    for k in m:
+                        byMember[k.value] = acc
+
+                delta = True
+
+        return byMember
 
 ParserFn = Callable[[List[str], UCDB], None]
 PARSERS: dict[str, ParserFn] = {}
