@@ -257,3 +257,53 @@ TEST(hash_prefix)
 	assertUEq(u8z_hash(a, EXACT_CHARS(3)), u8z_hash(b, EXACT_CHARS(3)));
 	assertUNEq(u8z_hash(a, EXACT_CHARS(4)), u8z_hash(b, EXACT_CHARS(4)));
 }
+
+TEST(hashI_suffixes)
+{
+	const char *a = "foobar";
+	const char *b = "FooBar";
+
+	for(size_t i = 0; i <= 5; ++i)
+		assertUEq(u8_hashI(a + i), u8_hashI(b + i), " i = %zu", i);
+}
+
+TEST(hashI_prefixes)
+{
+	const char *a = "foobar";
+	const char *b = "FooBar";
+
+	for(size_t i = 1; i <= 6; ++i)
+	{
+		assertUEq(u8z_hashI(a, EXACT_CHARS(i)), u8z_hashI(b, EXACT_CHARS(i)));
+		assertUNEq(u8z_hash(a, EXACT_CHARS(i)), u8z_hash(b, EXACT_CHARS(i)));
+	}
+}
+
+TEST(eqI_implies_hashI)
+{
+	const char *strings[] = {
+		"foo",
+		"FOO",
+		"\u03D0", "\u0392", "\u03B2",
+		NULL
+	};
+
+	for(const char **p = strings; *p; ++p)
+	{
+		for(const char **q = p; *q; ++q)
+		{
+			#define msg " p=\"%s\" q=\"%s\"", *p, *q
+			if(u8_streq(*p, *q))
+			{
+				assertTrue(u8_streqI(*p, *q), msg);
+				assertUEq(u8_hash(*p), u8_hash(*q), msg);
+				assertUEq(u8_hashI(*p), u8_hashI(*q), msg);
+			}
+			else if(u8_streqI(*p, *q))
+			{
+				assertUNEq(u8_hash(*p), u8_hash(*q), msg);
+				assertUEq(u8_hashI(*p), u8_hashI(*q), msg);
+			}
+		}
+	}
+}
